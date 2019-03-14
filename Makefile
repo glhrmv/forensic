@@ -1,6 +1,8 @@
 PROG := forensic
 
-CFLAGS := -Wall -Wextra -Werror
+CC := gcc
+
+CFLAGS := -Wall -Wextra -Werror -g
 
 SRCS := $(wildcard ./src/*.c)
 
@@ -15,7 +17,7 @@ all: $(PROG)
 
 # Calls the compiler with flags to link all object files together.
 $(PROG): $(OBJS)
-	gcc $(CFLAGS) $(OBJS) -o $(PROG)
+	$(CC) $(CFLAGS) $(OBJS) -o $(PROG)
 
 # Includes the dependency lists (.d files).
 -include $(DEPS)
