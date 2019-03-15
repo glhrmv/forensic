@@ -6,7 +6,6 @@
 
 #include <fcntl.h>
 
-
 int main(int argc, char **argv)
 {
   struct executionInfo execInfo;
@@ -20,7 +19,7 @@ int main(int argc, char **argv)
   }
 
   // Print ExecutionInfo's state if the debug flag is on
-  if (execInfo.debug)
+  if (execInfo.debug_f)
   {
     printExecInfo(execInfo);
   }

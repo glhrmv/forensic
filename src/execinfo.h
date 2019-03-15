@@ -1,26 +1,35 @@
 #ifndef EXECINFO_H
 #define EXECINFO_H
 
+extern const char * LOG_ENV_NAME;
+
+
 
 /* Struct with all the possible options that the user may select */
 struct executionInfo {
 
 /* Execution flags */
-int recursive;
-int identifier;
-int log;
-int redirect;
-int debug;
+int recursive_f;
+int identifier_f;
+int log_f;
+int redirect_f;
+int debug_f;
 
 /* ID Algorithms flags */
-int md5;
-int sha1;
-int sha256;
+int md5_f;
+int sha1_f;
+int sha256_f;
 
 /* Execution variables */
 char * idAlgorithms;
 char * outFile;
+
+/* Environment variables */
+char * logOutFile;
+
 };
+
+
 
 /* Resets all of the struct's values 
    Return -1 on error or 0 otherwise */

@@ -6,21 +6,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char *LOG_ENV_NAME = "LOGFILENAME";
+
 int emptyExecInfo(struct executionInfo *execInfo)
 {
     if (execInfo == NULL)
         return -1;
 
     /* Set all the flags to 0 */
-    execInfo->recursive = 0;
-    execInfo->identifier = 0;
-    execInfo->log = 0;
-    execInfo->redirect = 0;
-    execInfo->debug = 0;
+    execInfo->recursive_f = 0;
+    execInfo->identifier_f = 0;
+    execInfo->log_f = 0;
+    execInfo->redirect_f = 0;
+    execInfo->debug_f = 0;
 
-    execInfo->md5 = 0;
-    execInfo->sha1 = 0;
-    execInfo->sha256 = 0;
+    execInfo->md5_f = 0;
+    execInfo->sha1_f = 0;
+    execInfo->sha256_f = 0;
+
+    execInfo->logOutFile = 0;
 
     /* Why not */
     execInfo->idAlgorithms = NULL;
@@ -28,6 +32,7 @@ int emptyExecInfo(struct executionInfo *execInfo)
 
     return 0;
 }
+
 
 int setIdAlgorithmFlags(char *idAlgorithms, struct executionInfo *execInfo)
 {
@@ -39,7 +44,7 @@ int setIdAlgorithmFlags(char *idAlgorithms, struct executionInfo *execInfo)
 
     for (size_t i = 0; i <= strlen(idAlgorithms); i++)
     {
-        if (idAlgorithms[i] == ',' || idAlgorithms[i] == '\0' )
+        if (idAlgorithms[i] == ',' || idAlgorithms[i] == '\0')
         {
             str = substr(previousWordEnd, i, idAlgorithms);
 
@@ -48,17 +53,17 @@ int setIdAlgorithmFlags(char *idAlgorithms, struct executionInfo *execInfo)
 
             if (strcmp("md5", str) == 0)
             {
-                execInfo->md5 = 1;
+                execInfo->md5_f = 1;
             }
             else if (strcmp("sha1", str) == 0)
             {
-                execInfo->sha1 = 1;
+                execInfo->sha1_f = 1;
             }
             else if (strcmp("sha256", str) == 0)
             {
-                execInfo->sha256 = 1;
+                execInfo->sha256_f = 1;
             }
-            else 
+            else
             {
                 return -1;
             }
@@ -89,28 +94,37 @@ int setExecInfo(int argc, char *argv[], struct executionInfo *execInfo)
         switch (c)
         {
         case 'd':
-            execInfo->debug = 1;
+            execInfo->debug_f = 1;
             break;
 
         case 'r':
-            execInfo->recursive = 1;
+            execInfo->recursive_f = 1;
             break;
 
         case 'h':
-            execInfo->identifier = 1;
+            execInfo->identifier_f = 1;
             execInfo->idAlgorithms = optarg;
+
             if (setIdAlgorithmFlags(execInfo->idAlgorithms, execInfo) < 0)
                 return -1;
 
             break;
 
         case 'o':
-            execInfo->redirect = 1;
+            execInfo->redirect_f = 1;
             execInfo->outFile = optarg;
             break;
 
         case 'v':
-            execInfo->log = 1;
+            execInfo->log_f = 1;
+            execInfo->logOutFile = getenv(LOG_ENV_NAME);
+
+            if (execInfo->logOutFile == NULL)
+            {
+                fprintf(stderr, "environment variable '%s' isn't set \n", LOG_ENV_NAME);
+                return -1;
+            }
+
             break;
 
         case '?':
@@ -124,14 +138,15 @@ int setExecInfo(int argc, char *argv[], struct executionInfo *execInfo)
 
 void printExecInfo(struct executionInfo execInfo)
 {
-    printf("r_flag = %d\n", execInfo.recursive);
-    printf("h_flag = %d\n", execInfo.identifier);
+    printf("r_flag = %d\n", execInfo.recursive_f);
+    printf("h_flag = %d\n", execInfo.identifier_f);
     printf("h_algorithms = %s \n", execInfo.idAlgorithms);
-    printf("md5_flag = %d \n", execInfo.md5);
-    printf("sha1_flag = %d \n", execInfo.sha1);
-    printf("sha256_flag = %d \n", execInfo.sha256);
-    printf("o_flag = %d\n", execInfo.redirect);
+    printf("md5_flag = %d \n", execInfo.md5_f);
+    printf("sha1_flag = %d \n", execInfo.sha1_f);
+    printf("sha256_flag = %d \n", execInfo.sha256_f);
+    printf("o_flag = %d\n", execInfo.redirect_f);
     printf("o_output_name = %s \n", execInfo.outFile);
-    printf("v_flag = %d\n", execInfo.log);
-    printf("d_flag = %d \n", execInfo.debug);
+    printf("v_flag = %d\n", execInfo.log_f);
+    printf("%s = %s \n", LOG_ENV_NAME, execInfo.logOutFile);
+    printf("d_flag = %d \n", execInfo.debug_f);
 }
