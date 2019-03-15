@@ -58,6 +58,10 @@ int setIdAlgorithmFlags(char *idAlgorithms, struct executionInfo *execInfo)
             {
                 execInfo->sha256 = 1;
             }
+            else 
+            {
+                return -1;
+            }
 
             free(str);
             str = NULL;
