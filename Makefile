@@ -2,7 +2,7 @@ PROG := forensic
 
 CC := gcc
 
-CFLAGS := -Wall -Wextra -Werror -g
+CFLAGS := -Wall -Wextra -g
 
 SRCS := $(wildcard ./src/*.c)
 
