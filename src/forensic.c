@@ -9,29 +9,25 @@
 
 int main(int argc, char **argv)
 {
-
   struct executionInfo execInfo;
-
-  /* Using getopt to parse args */
   static char *usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
  
-  int err = setExecInfo(argc, argv, &execInfo);
-
-  // In case of invalid option
-  if (err || argc == 1)
+  // In case of invalid options
+  if (setExecInfo(argc,argv,&execInfo) < 0 || argc == 1)
   {
     fprintf(stderr, usage, argv[0]);
     exit(1);
   }
 
-  // Print options
+  // Print ExecutionInfo's state if the debug flag is on
   if (execInfo.debug)
   {
     printExecInfo(execInfo);
   }
 
-  // Argument passed
-  fprintf(stdout, "file or folder: %s\n", argv[argc - 1]);
+
+  // Prints the name of the entry directory/file
+  printf("entry file/directory: %s \n", argv[argc - 1]);
 
   exit(0);
 }
