@@ -1,7 +1,10 @@
+# Program name.
 PROG := forensic
 
+# Compiler flags.
 CFLAGS := -Wall -Wextra -Werror
 
+# Source files.
 SRCS := $(wildcard ./src/*.c)
 
 # Generate .o and .d filenames for each .cpp file.
