@@ -122,7 +122,7 @@ int setProgramConfig(int argc, char *argv[], ProgramConfig * program_config)
 
             if (program_config->logfile == NULL)
             {
-                fprintf(stderr, "environment variable '%s' does not exist \n", LOG_ENV_NAME);
+                fprintf(stderr, "environment variable '%s' isn't set \n", LOG_ENV_NAME);
                 return -1;
             }
 
