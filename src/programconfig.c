@@ -122,7 +122,7 @@ int setProgramConfig(int argc, char *argv[], ProgramConfig * program_config)
 
             if (program_config->logfile == NULL)
             {
-                fprintf(stderr, "environment variable '%s' isn't set \n", LOG_ENV_NAME);
+                fprintf(stderr, "environment variable '%s' does not exist \n", LOG_ENV_NAME);
                 return -1;
             }
 
@@ -136,7 +136,21 @@ int setProgramConfig(int argc, char *argv[], ProgramConfig * program_config)
 
     program_config->arg=argv[optind];
 
-    return 0;
+    if (!fileExists(program_config->arg))
+    {
+        if (program_config->arg != NULL)
+        {
+            fprintf(stderr, "'%s' is not a file/directory \n", program_config->arg);
+        }
+        else
+        {
+            fprintf(stderr, "no file/directory given \n");
+        }
+        
+        return -1;
+    }
+
+        return 0;
 }
 
 void printProgramConfig(ProgramConfig program_config)

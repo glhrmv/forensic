@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,4 +17,10 @@ char *substr(int start, int finish, char *str)
     substr[finish-start] = '\0';
 
     return substr;
+}
+
+
+int fileExists(const char* pathname)
+{
+    return !access(pathname, F_OK);
 }
