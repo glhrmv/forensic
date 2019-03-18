@@ -1,4 +1,4 @@
-#include "execinfo.h"
+#include "programconfig.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,20 +8,20 @@
 
 int main(int argc, char **argv)
 {
-  struct executionInfo execInfo;
+  ProgramConfig config;
   static char *usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
  
   // In case of invalid options
-  if (setExecInfo(argc,argv,&execInfo) < 0 || argc == 1)
+  if (setProgramConfig(argc,argv,&config) < 0 || argc == 1)
   {
     fprintf(stderr, usage, argv[0]);
     exit(1);
   }
 
   // Print ExecutionInfo's state if the debug flag is on
-  if (execInfo.debug_f)
+  if (config.debug_flag)
   {
-    printExecInfo(execInfo);
+    printProgramConfig(config);
   }
 
 
