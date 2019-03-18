@@ -1,6 +1,8 @@
 #ifndef FORENSIC_H
 #define FORENSIC_H
 
+#include <time.h>
+
 /**
  * @brief A structure to represent the program's configuration.
  */
@@ -49,6 +51,15 @@ int is_file(const char* pathname);
  * @return int Zero on success, non-zero otherwise
  */
 int is_directory(const char* pathname);
+
+/**
+ * @brief Converts time_t to char*, in ISO 8601 format (e.g., 2018-01-04T16:30:19).
+ * 
+ * @param tm time_t value to convert
+ * @return char* Formatted string
+ */
+char* time_to_iso_str(const time_t time);
+
 /**
  * Parses arguments (using getopt) and fills a ProgramConfig struct.
  * If any of the parameters are invalid/unexpected, prints error message(s)

@@ -37,6 +37,13 @@ int is_directory(const char* pathname) {
  stat(pathname, &path_stat);
  return S_ISDIR(path_stat.st_mode); 
 }
+
+char* time_to_iso_str(const time_t tm) {
+  char* buffer = malloc(256);
+  strftime(buffer, 256, "%FT%T", localtime(&tm));
+  return buffer;
+}
+
 void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   /* Program usage */
   char* usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
@@ -178,7 +185,31 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
 }
 
 void process(const ProgramConfig program_config) {
-  fprintf(stdout, "file or folder: %s\n", program_config.arg);
+  /* Fill a file statistics struct from arg passed */
+  struct stat file_stat;
 
-  /* TOOD: Begin processing argument passed */
+  if (stat(program_config.arg, &file_stat) < 0) {
+    fprintf(stderr, "an error occurred retrieving file details\n");
+    exit(1);
+  }
+
+  char* file_name = program_config.arg;
+  off_t file_size = file_stat.st_size;
+  char* file_type = "";
+  char* file_access = "";
+  time_t file_creation_date = file_stat.st_ctime;
+  time_t file_modification_date = file_stat.st_mtime;
+
+  fprintf(stdout, "%s,", file_name);
+  fprintf(stdout, "%s,", file_type);
+  fprintf(stdout, "%llu,", file_size);
+  fprintf(stdout, "%s,", file_access);
+  fprintf(stdout, "%s,", time_to_iso_str(file_creation_date));
+  fprintf(stdout, "%s", time_to_iso_str(file_modification_date));
+
+  if (program_config.h_flag) {
+    
+  }
+
+  fprintf(stdout, "\n");
 }
