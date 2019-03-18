@@ -8,9 +8,9 @@
    Returns NULL on error */
 char * substr(int start, int finish, char * str); 
 
-/* Checks if a file exists 
-   Returns 1 if it does or 0 if it doesn't*/ 
-int fileExists(const char* pathname);   
+/* Checks if the path given by 'pathname' is valid
+   Returns 1 if it is or 0 if it isn't*/ 
+int validPath(const char* pathname);   
 
 
 #endif

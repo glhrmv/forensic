@@ -136,7 +136,7 @@ int setProgramConfig(int argc, char *argv[], ProgramConfig * program_config)
 
     program_config->arg=argv[optind];
 
-    if (!fileExists(program_config->arg))
+    if (!validPath(program_config->arg))
     {
         if (program_config->arg != NULL)
         {
@@ -146,7 +146,7 @@ int setProgramConfig(int argc, char *argv[], ProgramConfig * program_config)
         {
             fprintf(stderr, "no file/directory given \n");
         }
-        
+
         return -1;
     }
 

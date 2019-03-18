@@ -20,7 +20,7 @@ char *substr(int start, int finish, char *str)
 }
 
 
-int fileExists(const char* pathname)
+int validPath(const char* pathname)
 {
     return !access(pathname, F_OK);
 }
