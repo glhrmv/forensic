@@ -27,13 +27,28 @@ typedef struct ProgramConfig {
 static const ProgramConfig empty_program_config;
 
 /**
- * @brief Check if file exists on disk.
+ * @brief Checks if file exists on disk.
  * 
  * @param pathname Path name
  * @return Zero on success, non-zero otherwise
  */
 int file_exists(const char* pathname);
 
+/**
+ * @brief Checks if a pathname is a regular file.
+ * 
+ * @param pathname Path name
+ * @return int Zero on success, non-zero otherwise
+ */
+int is_file(const char* pathname);
+
+/**
+ * @brief Checks if a pathname is a directory.
+ * 
+ * @param pathname Path name
+ * @return int Zero on success, non-zero otherwise
+ */
+int is_directory(const char* pathname);
 /**
  * Parses arguments (using getopt) and fills a ProgramConfig struct.
  * If any of the parameters are invalid/unexpected, prints error message(s)

@@ -5,8 +5,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
 #include <string.h>
-#include <regex.h>
+#include <dirent.h>
 
 int main(int argc, char** argv) {
   /* Declare and initialize program config */
@@ -25,6 +26,17 @@ int file_exists(const char* pathname) {
   return access(pathname, F_OK);
 }
 
+int is_file(const char* pathname) {
+ struct stat path_stat;
+ stat(pathname, &path_stat);
+ return S_ISREG(path_stat.st_mode); 
+}
+
+int is_directory(const char* pathname) {
+ struct stat path_stat;
+ stat(pathname, &path_stat);
+ return S_ISDIR(path_stat.st_mode); 
+}
 void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   /* Program usage */
   char* usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
@@ -110,6 +122,7 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
       fprintf(stderr, "(warning) -h : invalid hash algorithm sent: \"%s\" (ignored)\n", token);
     }
 
+    /* Delete created copy */
     free(str_to_parse);
 
     /* If none of the valid algorithms were input */
@@ -129,10 +142,25 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
     }
   }
 
-  /* All good: first argument after options is what we want */
-  program_config->arg = argv[optind];
+  /* The first argument after options is what we want */
+  char* arg = argv[optind];
 
-  /* Print options (debug mode) */
+  /* Check if it's something that actually exists */
+  if (file_exists(arg) != 0) {
+    fprintf(stderr, "%s : file/directory does not exist\n", argv[optind]);
+    exit(1);
+  } 
+
+  /* Check if it's either a file or a directory (i.e., not socket, FIFO, symlink, etc.) */
+  if (is_file(arg) != 0 && is_directory(arg) != 0) {
+    fprintf(stderr, "%s : that's not a file/directory\n", argv[optind]);
+    exit(1);
+  } 
+
+  /* All good: set it */
+  program_config->arg = arg;
+
+  /* Print options (when debug flag on) */
   if (program_config->debug_flag) {
     printf("debug_flag = %d\n", program_config->debug_flag); 
     printf("r_flag = %d\n", program_config->r_flag); 
