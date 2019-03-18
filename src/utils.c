@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 
 /* ========= USEFUL UTILITES ========= */
@@ -20,7 +21,18 @@ char *substr(int start, int finish, char *str)
 }
 
 
-int validPath(const char* pathname)
+int isFile(const char *pathname)
 {
-    return !access(pathname, F_OK);
+    struct stat path_stat;
+    stat(pathname, &path_stat);
+
+    return S_ISREG(path_stat.st_mode);
+}
+
+int isDirectory(const char *pathname)
+{
+    struct stat path_stat;
+    stat(pathname, &path_stat);
+
+    return S_ISDIR(path_stat.st_mode);
 }

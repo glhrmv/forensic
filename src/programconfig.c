@@ -136,19 +136,21 @@ int setProgramConfig(int argc, char *argv[], ProgramConfig * program_config)
 
     program_config->arg=argv[optind];
 
-    if (!validPath(program_config->arg))
+    if (!isDirectory(program_config->arg) && !isFile(program_config->arg))
     {
-        if (program_config->arg != NULL)
+        if (program_config->arg == NULL)
         {
-            fprintf(stderr, "'%s' is not a file/directory \n", program_config->arg);
+            fprintf(stderr, "no file/directory given \n");
         }
         else
         {
-            fprintf(stderr, "no file/directory given \n");
+            fprintf(stderr, "'%s' is not a file/directory \n", program_config->arg);
         }
 
         return -1;
     }
+
+
 
         return 0;
 }
