@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -16,8 +17,12 @@ int main(int argc, char** argv) {
   /* Modify program_config according to argv */
   parse_args(argc, argv, &program_config);
 
+  fprintf(stdout, "Processing...\n");
+
   /* Begin processing */
   process(program_config);
+
+  fprintf(stdout, "Done.\n");
 
   exit(0);
 }
@@ -46,7 +51,7 @@ char* time_to_iso_str(const time_t tm) {
 
 void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   /* Program usage */
-  char* usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
+  const char* usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
 
   /* Using getopt to parse args */
   extern char* optarg;
@@ -169,6 +174,8 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
 
   /* Print options (when debug flag on) */
   if (program_config->debug_flag) {
+    printf("--------------\n");
+    printf("program config:\n");
     printf("debug_flag = %d\n", program_config->debug_flag); 
     printf("r_flag = %d\n", program_config->r_flag); 
     printf("h_flag = %d\n", program_config->h_flag); 
@@ -181,18 +188,22 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
     printf("v_flag = %d\n", program_config->v_flag); 
     printf("logfile = \"%s\"\n", program_config->logfile); 
     printf("arg value = \"%s\"\n", program_config->arg); 
+    printf("--------------\n");
   }
 }
 
 void process(const ProgramConfig program_config) {
+  /* Choose output stream (stdout if -o flag disabled) */
+  FILE* outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
+  
   /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
-
   if (stat(program_config.arg, &file_stat) < 0) {
     fprintf(stderr, "an error occurred retrieving file details\n");
     exit(1);
   }
 
+  /* Gather file data */
   char* file_name = program_config.arg;
   off_t file_size = file_stat.st_size;
   char* file_type = "";
@@ -200,16 +211,23 @@ void process(const ProgramConfig program_config) {
   time_t file_creation_date = file_stat.st_ctime;
   time_t file_modification_date = file_stat.st_mtime;
 
-  fprintf(stdout, "%s,", file_name);
-  fprintf(stdout, "%s,", file_type);
-  fprintf(stdout, "%llu,", file_size);
-  fprintf(stdout, "%s,", file_access);
-  fprintf(stdout, "%s,", time_to_iso_str(file_creation_date));
-  fprintf(stdout, "%s", time_to_iso_str(file_modification_date));
+  /* Print file data */
+  fprintf(outstream, "%s,", file_name);
+  fprintf(outstream, "%s,", file_type);
+  fprintf(outstream, "%llu,", file_size);
+  fprintf(outstream, "%s,", file_access);
+  fprintf(outstream, "%s,", time_to_iso_str(file_creation_date));
+  fprintf(outstream, "%s", time_to_iso_str(file_modification_date));
 
+  /* Are we human or are we hashing? */
   if (program_config.h_flag) {
     
   }
 
-  fprintf(stdout, "\n");
+  /* Close output stream (if -o flag enabled) */
+  if (program_config.o_flag)
+    fclose(outstream);
+
+  /* We're done */
+  fprintf(outstream, "\n");
 }
