@@ -25,6 +25,19 @@ int main(int argc, char **argv)
     printProgramConfig(config);
   }
 
+  if (isDirectory(config.arg))
+  {
+    char ** files = NULL;
+    int n_files = 0;
+
+    saveFileNames(config.arg, &files, &n_files);
+
+    for (int i = 0; i < n_files; i++)
+    {
+      printf("%s \n", files[i]);
+    }
+
+  }
 
   // Prints the name of the entry directory/file
   printf("entry file/directory: %s \n", argv[argc - 1]);
