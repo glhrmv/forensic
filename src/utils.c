@@ -63,7 +63,9 @@ void saveFileNames(char *directory, char ***file_names, int *number_of_files)
         *file_names = (char **)realloc(*file_names, sizeof(char *) * n_files);
         *(*file_names + n_files - 1) = (char *)malloc(sizeof(char) * MAX_F_NAME_SIZE);
 
-        strcpy(*(*file_names + n_files - 1), dir_info->d_name);
+        strcpy(*(*file_names + n_files - 1), directory);
+        strcat(*(*file_names+ n_files - 1), "/");
+        strcat(*(*file_names+ n_files - 1), dir_info->d_name);
     }
 
     closedir(dir);
