@@ -56,9 +56,22 @@ int is_directory(const char* pathname);
  * @brief Converts time_t to char*, in ISO 8601 format (e.g., 2018-01-04T16:30:19).
  * 
  * @param tm time_t value to convert
- * @return char* Formatted string
+ * @return char* Formatted string (dynamic, must be freed)
  */
 char* time_to_iso_str(const time_t time);
+
+/**
+ * @brief Calls a specified command, returning its stdout output.
+ * Only supports single-argument program calls.
+ * 
+ * For example, when invoked with command_to_str("file -b %s", "Makefile"),
+ * it will return `makefile script text, ASCII text`
+ * 
+ * @param fmt Format string
+ * @param arg Argument to send to command
+ * @return char* Output of command as string (dynamic, must be freed)
+ */
+char* command_to_str(const char* fmt, const char* arg);
 
 /**
  * Parses arguments (using getopt) and fills a ProgramConfig struct.

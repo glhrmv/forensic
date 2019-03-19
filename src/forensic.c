@@ -49,6 +49,32 @@ char* time_to_iso_str(const time_t tm) {
   return buffer;
 }
 
+char* command_to_str(const char* fmt, const char* arg) {
+  /* Fill out command string according to format */
+	char command[256];
+  sprintf(command, fmt, arg);
+
+  /* Run command */
+  FILE* fp = popen(command, "r");
+
+  if (fp == NULL) {
+    fprintf(stderr, "error running command\n");
+    exit(1);
+  }
+
+  /* Fill char* */
+  char* str = malloc(256);
+  int i = 0;
+  char c;
+  while((c = fgetc(fp)) != '\n')
+    str[i++] = c;
+  str[i] = '\0';
+
+  pclose(fp);
+
+  return str;
+}
+
 void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   /* Program usage */
   const char* usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
