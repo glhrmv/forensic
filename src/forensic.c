@@ -32,15 +32,13 @@ int file_exists(const char* pathname) {
 }
 
 int is_file(const char* pathname) {
- struct stat path_stat;
- stat(pathname, &path_stat);
- return S_ISREG(path_stat.st_mode); 
+  struct stat path_stat;
+  return stat(pathname, &path_stat) && S_ISREG(path_stat.st_mode); 
 }
 
 int is_directory(const char* pathname) {
- struct stat path_stat;
- stat(pathname, &path_stat);
- return S_ISDIR(path_stat.st_mode); 
+  struct stat path_stat;
+  return stat(pathname, &path_stat) && S_ISDIR(path_stat.st_mode); 
 }
 
 char* time_to_iso_str(const time_t tm) {
@@ -51,7 +49,7 @@ char* time_to_iso_str(const time_t tm) {
 
 char* command_to_str(const char* fmt, const char* arg) {
   /* Fill out command string according to format */
-	char command[256];
+  char command[256];
   sprintf(command, fmt, arg);
 
   /* Run command */
@@ -185,13 +183,13 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
 
   /* Check if it's something that actually exists */
   if (file_exists(arg) != 0) {
-    fprintf(stderr, "%s : file/directory does not exist\n", argv[optind]);
+    fprintf(stderr, "%s : does not exist\n", argv[optind]);
     exit(1);
   } 
 
   /* Check if it's either a file or a directory (i.e., not socket, FIFO, symlink, etc.) */
   if (is_file(arg) != 0 && is_directory(arg) != 0) {
-    fprintf(stderr, "%s : that's not a file/directory\n", argv[optind]);
+    fprintf(stderr, "%s : not a file/directory\n", argv[optind]);
     exit(1);
   } 
 
@@ -221,7 +219,7 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
 void process(const ProgramConfig program_config) {
   /* Choose output stream (stdout if -o flag disabled) */
   FILE* outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
-  
+
   /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
   if (stat(program_config.arg, &file_stat) < 0) {
@@ -232,10 +230,10 @@ void process(const ProgramConfig program_config) {
   /* Gather file data */
   char* file_name = program_config.arg;
   off_t file_size = file_stat.st_size;
-	char* file_type = command_to_str("file -b %s", program_config.arg);
+  char* file_type = command_to_str("file -b %s", program_config.arg);
   char* file_access = "";
-	char* file_creation_date = time_to_iso_str(file_stat.st_ctime);
-	char* file_modification_date = time_to_iso_str(file_stat.st_mtime);
+  char* file_creation_date = time_to_iso_str(file_stat.st_ctime);
+  char* file_modification_date = time_to_iso_str(file_stat.st_mtime);
 
   /* Print file data */
   fprintf(outstream, "%s,", file_name);
@@ -252,41 +250,41 @@ void process(const ProgramConfig program_config) {
   fprintf(outstream, (file_stat.st_mode & S_IWOTH) ? "w" : "-");
   fprintf(outstream, (file_stat.st_mode & S_IXOTH) ? "x" : "-");
   fprintf(outstream, "%s,", file_access);
-	fprintf(outstream, "%s,", file_creation_date);
-	fprintf(outstream, "%s", file_modification_date);
+  fprintf(outstream, "%s,", file_creation_date);
+  fprintf(outstream, "%s", file_modification_date);
 
   /* Are we human or are we hashing? */
   if (program_config.h_flag) {
-		if (program_config.h_alg_md5_flag) {
+    if (program_config.h_alg_md5_flag) {
       /* Get MD5 checksum */
       char* md5_hash = command_to_str("md5 -q %s", program_config.arg);
       fprintf(outstream, ",%s", md5_hash);
       free(md5_hash);
-		}
+    }
 
-		if (program_config.h_alg_sha1_flag) {
+    if (program_config.h_alg_sha1_flag) {
       /* Get SHA1 checksum */
-      char* md5_hash = command_to_str("shasum %s | awk '{print $1}'", program_config.arg);
-      fprintf(outstream, ",%s", md5_hash);
-      free(md5_hash);
-    }
-    
-		if (program_config.h_alg_sha256_flag) {
-      /* Get SHA256 checksum */
-      char* md5_hash = command_to_str("shasum -a 256 %s | awk '{print $1}'", program_config.arg);
-      fprintf(outstream, ",%s", md5_hash);
-      free(md5_hash);
-    }
-  }
+      char* sha1_hash = command_to_str("shasum %s | awk '{print $1}'", program_config.arg);
+      fprintf(outstream, ",%s", sha1_hash;
+          free(sha1_hash);
+          }
 
-	/* We're done */
-	fprintf(outstream, "\n");
+          if (program_config.h_alg_sha256_flag) {
+          /* Get SHA256 checksum */
+          char* sha256_hash = command_to_str("shasum -a 256 %s | awk '{print $1}'", program_config.arg);
+          fprintf(outstream, ",%s",sha256_hash);
+          free(sha256_hash);
+          }
+          }
 
-  /* Close output stream (if -o flag enabled) */
-  if (program_config.o_flag)
-    fclose(outstream);
+          /* We're done */
+          fprintf(outstream, "\n");
 
-	/* Free dynamically allocated memory */
-	free(file_creation_date);
-	free(file_modification_date);
+          /* Close output stream (if -o flag enabled) */
+          if (program_config.o_flag)
+          fclose(outstream);
+
+          /* Free dynamically allocated memory */
+          free(file_creation_date);
+          free(file_modification_date);
 }
