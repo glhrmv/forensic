@@ -265,26 +265,26 @@ void process(const ProgramConfig program_config) {
     if (program_config.h_alg_sha1_flag) {
       /* Get SHA1 checksum */
       char* sha1_hash = command_to_str("shasum %s | awk '{print $1}'", program_config.arg);
-      fprintf(outstream, ",%s", sha1_hash;
-          free(sha1_hash);
-          }
+      fprintf(outstream, ",%s", sha1_hash);
+      free(sha1_hash);
+    }
 
-          if (program_config.h_alg_sha256_flag) {
-          /* Get SHA256 checksum */
-          char* sha256_hash = command_to_str("shasum -a 256 %s | awk '{print $1}'", program_config.arg);
-          fprintf(outstream, ",%s",sha256_hash);
-          free(sha256_hash);
-          }
-          }
+    if (program_config.h_alg_sha256_flag) {
+      /* Get SHA256 checksum */
+      char* sha256_hash = command_to_str("shasum -a 256 %s | awk '{print $1}'", program_config.arg);
+      fprintf(outstream, ",%s",sha256_hash);
+      free(sha256_hash);
+    }
+  }
 
-          /* We're done */
-          fprintf(outstream, "\n");
+  /* We're done */
+  fprintf(outstream, "\n");
 
-          /* Close output stream (if -o flag enabled) */
-          if (program_config.o_flag)
-          fclose(outstream);
+  /* Close output stream (if -o flag enabled) */
+  if (program_config.o_flag)
+    fclose(outstream);
 
-          /* Free dynamically allocated memory */
-          free(file_creation_date);
-          free(file_modification_date);
+  /* Free dynamically allocated memory */
+  free(file_creation_date);
+  free(file_modification_date);
 }
