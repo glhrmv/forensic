@@ -68,11 +68,7 @@ char* command_to_str(const char* fmt, const char* arg) {
 
   /* Fill char* */
   char* str = malloc(256);
-  int i = 0;
-  char c;
-  while((c = fgetc(fp)) != '\n')
-    str[i++] = c;
-  str[i] = '\0';
+  fscanf(fp, "%s\n", str);
 
   /* Close pipe */
   pclose(fp);
