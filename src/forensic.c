@@ -33,12 +33,18 @@ int file_exists(const char* pathname) {
 
 int is_file(const char* pathname) {
   struct stat path_stat;
-  return stat(pathname, &path_stat) && S_ISREG(path_stat.st_mode); 
+  if (stat(pathname, &path_stat) == 0 && S_ISREG(path_stat.st_mode)) 
+    return 0;
+  else
+    return -1;
 }
 
 int is_directory(const char* pathname) {
   struct stat path_stat;
-  return stat(pathname, &path_stat) && S_ISDIR(path_stat.st_mode); 
+  if (stat(pathname, &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) 
+    return 0;
+  else
+    return -1;
 }
 
 char* time_to_iso_str(const time_t tm) {
@@ -52,7 +58,7 @@ char* command_to_str(const char* fmt, const char* arg) {
   char command[256];
   sprintf(command, fmt, arg);
 
-  /* Run command */
+  /* Open pipe & run command */
   FILE* fp = popen(command, "r");
 
   if (fp == NULL) {
@@ -68,6 +74,7 @@ char* command_to_str(const char* fmt, const char* arg) {
     str[i++] = c;
   str[i] = '\0';
 
+  /* Close pipe */
   pclose(fp);
 
   return str;
@@ -231,9 +238,9 @@ void process(const ProgramConfig program_config) {
   char* file_name = program_config.arg;
   off_t file_size = file_stat.st_size;
   char* file_type = command_to_str("file -b %s", program_config.arg);
-  char* file_access = "";
-  char* file_creation_date = time_to_iso_str(file_stat.st_ctime);
-  char* file_modification_date = time_to_iso_str(file_stat.st_mtime);
+  char* file_access_owner = "";
+  char* file_modified_date = time_to_iso_str(file_stat.st_ctime);
+  char* file_accessed_date = time_to_iso_str(file_stat.st_mtime);
 
   /* Print file data */
   fprintf(outstream, "%s,", file_name);
@@ -249,9 +256,9 @@ void process(const ProgramConfig program_config) {
   fprintf(outstream, (file_stat.st_mode & S_IROTH) ? "r" : "-");
   fprintf(outstream, (file_stat.st_mode & S_IWOTH) ? "w" : "-");
   fprintf(outstream, (file_stat.st_mode & S_IXOTH) ? "x" : "-");
-  fprintf(outstream, "%s,", file_access);
-  fprintf(outstream, "%s,", file_creation_date);
-  fprintf(outstream, "%s", file_modification_date);
+  fprintf(outstream, "%s,", file_access_owner);
+  fprintf(outstream, "%s,", file_modified_date);
+  fprintf(outstream, "%s", file_accessed_date);
 
   /* Are we human or are we hashing? */
   if (program_config.h_flag) {
@@ -281,10 +288,14 @@ void process(const ProgramConfig program_config) {
   fprintf(outstream, "\n");
 
   /* Close output stream (if -o flag enabled) */
-  if (program_config.o_flag)
+  if (program_config.o_flag) {
     fclose(outstream);
 
+    /* Notify user of saved file through stdout */
+    fprintf(stdout, "Data saved on file \"%s\"\n", program_config.o_value);
+  }
+
   /* Free dynamically allocated memory */
-  free(file_creation_date);
-  free(file_modification_date);
+  free(file_modified_date);
+  free(file_accessed_date);
 }
