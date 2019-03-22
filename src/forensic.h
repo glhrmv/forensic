@@ -21,12 +21,20 @@ typedef struct ProgramConfig {
   char* arg; // Argument passed to program (file or directory)
 } ProgramConfig;
 
+typedef struct ProcessedStats {
+  size_t files_processed; // Number of files processed
+  size_t dirs_processed; // Number of directories processed
+} ProcessedStats;
+
 /**
- * Declare a const static instance of ProgramConfig
- * which will have all of its fields initialized due to static initialization.
+ * Declare a const static instance of each of our structs
+ * which will have all of their fields initialized due to static initialization.
  * See: https://stackoverflow.com/a/6891731/6304441
  */
+/* Empty ProgramConfig struct */
 static const ProgramConfig empty_program_config;
+/* Empty ProcessesStats struct */
+static const ProcessedStats empty_processed_stats;
 
 /**
  * @brief Checks if file exists on disk.
