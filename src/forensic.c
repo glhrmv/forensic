@@ -222,8 +222,30 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
 void process(const ProgramConfig program_config) {
   /* Choose output stream (stdout if -o flag disabled) */
   FILE* outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
+  
+  /* Gather some processed statistics */
+  ProcessedStats processed_stats = empty_processed_stats;
 
-  /* Fill a file statistics struct from arg passed */
+  /* Are we processing a regular file, or a directory? */
+  if (is_file(program_config.arg) == 0)
+    process_file(program_config, outstream, &processed_stats);
+  else
+    process_dir(program_config, outstream, &processed_stats);
+
+  /* Temporary print message for test purposes, should be removed soon */
+  fprintf(stdout, "Processed stats: %zu files / %zu dirs\n", processed_stats.files_processed, processed_stats.dirs_processed);
+
+  /* Close output stream (if -o flag enabled) */
+  if (program_config.o_flag) {
+    fclose(outstream);
+
+    /* Notify user of saved file through stdout */
+    fprintf(stdout, "Data saved on file \"%s\"\n", program_config.o_value);
+  }
+}
+
+void process_file(const ProgramConfig program_config, FILE* outstream, ProcessedStats* processed_stats) {
+   /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
   if (stat(program_config.arg, &file_stat) < 0) {
     fprintf(stderr, "an error occurred retrieving file details\n");
@@ -242,6 +264,7 @@ void process(const ProgramConfig program_config) {
   fprintf(outstream, "%s,", file_name);
   fprintf(outstream, "%s,", file_type);
   fprintf(outstream, "%llu,", file_size);
+  /* File permissions stuff, needs work (should be put in file_access_owner) */
   fprintf(outstream, (S_ISDIR(file_stat.st_mode)) ? "d" : "-");
   fprintf(outstream, (file_stat.st_mode & S_IRUSR) ? "r" : "-");
   fprintf(outstream, (file_stat.st_mode & S_IWUSR) ? "w" : "-");
@@ -283,15 +306,24 @@ void process(const ProgramConfig program_config) {
   /* We're done */
   fprintf(outstream, "\n");
 
-  /* Close output stream (if -o flag enabled) */
-  if (program_config.o_flag) {
-    fclose(outstream);
-
-    /* Notify user of saved file through stdout */
-    fprintf(stdout, "Data saved on file \"%s\"\n", program_config.o_value);
-  }
-
   /* Free dynamically allocated memory */
   free(file_modified_date);
   free(file_accessed_date);
+
+  processed_stats->files_processed++;
+}
+
+void process_dir(const ProgramConfig program_config, FILE* outstream, ProcessedStats* processed_stats) {
+  /* TODO */
+  fprintf(outstream, "todo\n");
+
+  pid_t pid = fork();
+
+  if (pid == 0) {
+    processed_stats->dirs_processed++;
+  } else {
+    wait(NULL);
+    
+    processed_stats->dirs_processed++;
+  } 
 }
