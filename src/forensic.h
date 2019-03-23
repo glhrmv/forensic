@@ -1,6 +1,7 @@
 #ifndef FORENSIC_H
 #define FORENSIC_H
 
+#include <stdio.h>
 #include <time.h>
 
 /**
@@ -103,20 +104,22 @@ void process(const ProgramConfig program_config);
  * @brief Processes a single, regular file.
  * 
  * @param program_config ProgramConfig struct
+ * @param fname File name
  * @param outstream Output stream to write processed data to
  * @param processed_stats ProcessedStats struct
  */
-void process_file(const ProgramConfig program_config, FILE* outstream, ProcessedStats* processed_stats);
+void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream, ProcessedStats* processed_stats);
 
 /**
  * @brief Processes a directory, i.e., all regular files inside a directory.
  * If -r flag enabled, also processes subdirectories, recursively.
  * 
  * @param program_config ProgramConfig struct
+ * @param dname Directory name
  * @param outstream Output stream to write processed data to
  * @param processed_stats ProcessedStats struct
  */
-void process_dir(const ProgramConfig program_config, FILE* outstream, ProcessedStats* processed_stats);
+void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream, ProcessedStats* processed_stats);
 
 #endif
 

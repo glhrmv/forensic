@@ -194,7 +194,7 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   if (is_file(arg) != 0 && is_directory(arg) != 0) {
     fprintf(stderr, "%s : not a file/directory\n", argv[optind]);
     exit(1);
-  } 
+  }
 
   /* All good: set it */
   program_config->arg = arg;
@@ -228,9 +228,9 @@ void process(const ProgramConfig program_config) {
 
   /* Are we processing a regular file, or a directory? */
   if (is_file(program_config.arg) == 0)
-    process_file(program_config, outstream, &processed_stats);
+    process_file(program_config, program_config.arg, outstream, &processed_stats);
   else
-    process_dir(program_config, outstream, &processed_stats);
+    process_dir(program_config, program_config.arg, outstream, &processed_stats);
 
   /* Temporary print message for test purposes, should be removed soon */
   fprintf(stdout, "Processed stats: %zu files / %zu dirs\n", processed_stats.files_processed, processed_stats.dirs_processed);
@@ -244,18 +244,18 @@ void process(const ProgramConfig program_config) {
   }
 }
 
-void process_file(const ProgramConfig program_config, FILE* outstream, ProcessedStats* processed_stats) {
+void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream, ProcessedStats* processed_stats) {
    /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
-  if (stat(program_config.arg, &file_stat) < 0) {
+  if (stat(fname, &file_stat) < 0) {
     fprintf(stderr, "an error occurred retrieving file details\n");
     exit(1);
   }
 
   /* Gather file data */
-  char* file_name = program_config.arg;
+  const char* file_name = fname;
   off_t file_size = file_stat.st_size;
-  char* file_type = command_to_str("file -b %s", program_config.arg);
+  char* file_type = command_to_str("file -b %s", fname);
   char* file_access_owner = "";
   char* file_modified_date = time_to_iso_str(file_stat.st_ctime);
   char* file_accessed_date = time_to_iso_str(file_stat.st_mtime);
@@ -265,16 +265,18 @@ void process_file(const ProgramConfig program_config, FILE* outstream, Processed
   fprintf(outstream, "%s,", file_type);
   fprintf(outstream, "%llu,", file_size);
   /* File permissions stuff, needs work (should be put in file_access_owner) */
-  fprintf(outstream, (S_ISDIR(file_stat.st_mode)) ? "d" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IRUSR) ? "r" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IWUSR) ? "w" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IXUSR) ? "x" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IRGRP) ? "r" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IWGRP) ? "w" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IXGRP) ? "x" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IROTH) ? "r" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IWOTH) ? "w" : "-");
-  fprintf(outstream, (file_stat.st_mode & S_IXOTH) ? "x" : "-");
+  if (S_ISDIR(file_stat.st_mode))
+    fprintf(outstream, "d");
+
+  if (file_stat.st_mode & S_IRUSR)
+    fprintf(outstream, "r");
+  
+  if (file_stat.st_mode & S_IWUSR)
+    fprintf(outstream, "w");
+  
+  if (file_stat.st_mode & S_IXUSR)
+    fprintf(outstream, "x");
+
   fprintf(outstream, "%s,", file_access_owner);
   fprintf(outstream, "%s,", file_modified_date);
   fprintf(outstream, "%s", file_accessed_date);
@@ -283,21 +285,22 @@ void process_file(const ProgramConfig program_config, FILE* outstream, Processed
   if (program_config.h_flag) {
     if (program_config.h_alg_md5_flag) {
       /* Get MD5 checksum */
-      char* md5_hash = command_to_str("md5 -q %s", program_config.arg);
+      char* md5_hash = command_to_str("md5 %s | awk '{print $4}'", fname); // macOS
+      // char* md5_hash = command_to_str("md5sum %s | awk '{print $1}'", fname); // linux
       fprintf(outstream, ",%s", md5_hash);
       free(md5_hash);
     }
 
     if (program_config.h_alg_sha1_flag) {
       /* Get SHA1 checksum */
-      char* sha1_hash = command_to_str("shasum %s | awk '{print $1}'", program_config.arg);
+      char* sha1_hash = command_to_str("shasum %s | awk '{print $1}'", fname);
       fprintf(outstream, ",%s", sha1_hash);
       free(sha1_hash);
     }
 
     if (program_config.h_alg_sha256_flag) {
       /* Get SHA256 checksum */
-      char* sha256_hash = command_to_str("shasum -a 256 %s | awk '{print $1}'", program_config.arg);
+      char* sha256_hash = command_to_str("shasum -a 256 %s | awk '{print $1}'", fname);
       fprintf(outstream, ",%s",sha256_hash);
       free(sha256_hash);
     }
@@ -307,23 +310,55 @@ void process_file(const ProgramConfig program_config, FILE* outstream, Processed
   fprintf(outstream, "\n");
 
   /* Free dynamically allocated memory */
+  free(file_type);
   free(file_modified_date);
   free(file_accessed_date);
 
   processed_stats->files_processed++;
 }
 
-void process_dir(const ProgramConfig program_config, FILE* outstream, ProcessedStats* processed_stats) {
-  /* TODO */
-  fprintf(outstream, "todo\n");
-
+void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream, ProcessedStats* processed_stats) {
+  /* Create a new process */
   pid_t pid = fork();
 
   if (pid == 0) {
-    processed_stats->dirs_processed++;
+    /* Child process */
+    struct dirent *ent;
+    DIR* dir;
+
+    /* Open directory */
+    if ((dir = opendir(dname)) != NULL) {
+      /* Go through each file in this directory */
+      while ((ent = readdir (dir)) != NULL) {
+        /* Ignore the '.' and '..' directories */
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+          continue;
+
+        /* Prepend this directory name to file name */
+        char name[256];
+        strcpy(name, dname);
+        strcat(name, "/");
+        strcat(name, ent->d_name);
+
+        /* Ignore anything that isn't a file or a directory */
+        if (is_file(name) != 0 && is_directory(name) != 0)
+          continue;
+
+        if (is_directory(name) == 0 && program_config.r_flag)
+          process_dir(program_config, name, outstream, processed_stats);
+        else if (is_file(name) == 0)
+          process_file(program_config, name, outstream, processed_stats);
+      }
+    } else {
+      /* Error opening directory */
+    }
+
+    /* Exit from child process */ 
+    exit(0);
+  } else if (pid < 0) {
+    /* Error creating process */
   } else {
+    /* Parent process */
     wait(NULL);
-    
-    processed_stats->dirs_processed++;
-  } 
+  }
 }
