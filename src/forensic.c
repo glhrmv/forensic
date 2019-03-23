@@ -285,8 +285,8 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   if (program_config.h_flag) {
     if (program_config.h_alg_md5_flag) {
       /* Get MD5 checksum */
-      char* md5_hash = command_to_str("md5 %s | awk '{print $4}'", fname); // macOS
-      // char* md5_hash = command_to_str("md5sum %s | awk '{print $1}'", fname); // linux
+      // char* md5_hash = command_to_str("md5 %s | awk '{print $4}'", fname); // macOS
+      char* md5_hash = command_to_str("md5sum %s | awk '{print $1}'", fname); // linux
       fprintf(outstream, ",%s", md5_hash);
       free(md5_hash);
     }
