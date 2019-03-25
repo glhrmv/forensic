@@ -259,7 +259,7 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   /* Gather file data */
   const char* file_name = fname;
   off_t file_size = file_stat.st_size;
-  char* file_type = command_to_str("file -b %s", fname);
+  char* file_type = command_to_str("file -b \"%s\"", fname);
   char* file_access_owner = "";
   char* file_modified_date = time_to_iso_str(file_stat.st_ctime);
   char* file_accessed_date = time_to_iso_str(file_stat.st_mtime);
@@ -289,22 +289,22 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   if (program_config.h_flag) {
     if (program_config.h_alg_md5_flag) {
       /* Get MD5 checksum */
-      // char* md5_hash = command_to_str("md5 %s | awk '{print $4}'", fname); // macOS
-      char* md5_hash = command_to_str("md5sum %s | awk '{print $1}'", fname); // linux
+      char* md5_hash = command_to_str("md5 \"%s\" | rev | cut -d ' ' -f1 | rev", fname); // macOS
+      // char* md5_hash = command_to_str("md5sum \"%s\"" | rev | cut -d ' ' -f1 | rev", fname); // linux
       fprintf(outstream, ",%s", md5_hash);
       free(md5_hash);
     }
 
     if (program_config.h_alg_sha1_flag) {
       /* Get SHA1 checksum */
-      char* sha1_hash = command_to_str("shasum %s | awk '{print $1}'", fname);
+      char* sha1_hash = command_to_str("shasum \"%s\" | awk '{print $1}'", fname);
       fprintf(outstream, ",%s", sha1_hash);
       free(sha1_hash);
     }
 
     if (program_config.h_alg_sha256_flag) {
       /* Get SHA256 checksum */
-      char* sha256_hash = command_to_str("shasum -a 256 %s | awk '{print $1}'", fname);
+      char* sha256_hash = command_to_str("shasum -a 256 \"%s\" | awk '{print $1}'", fname);
       fprintf(outstream, ",%s",sha256_hash);
       free(sha256_hash);
     }
@@ -348,10 +348,13 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
         if (is_file(name) != 0 && is_directory(name) != 0)
           continue;
 
-        if (is_directory(name) == 0 && program_config.r_flag)
+        if (is_directory(name) == 0 && program_config.r_flag) {
+          /* Found a subdirectory, process it if -r flag enabled */
           process_dir(program_config, name, outstream, processed_stats);
-        else if (is_file(name) == 0)
+        } else if (is_file(name) == 0) {
+          /* Found a file */
           process_file(program_config, name, outstream, processed_stats);
+      }
       }
     } else {
       /* Error opening directory */
