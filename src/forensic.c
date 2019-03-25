@@ -226,6 +226,10 @@ void process(const ProgramConfig program_config) {
   /* Gather some processed statistics */
   ProcessedStats processed_stats = empty_processed_stats;
 
+  /* In case of a directory, strip the trailing '/' character from it if exists */
+  if (program_config.arg[strlen(program_config.arg) - 1] == '/')
+    program_config.arg[strlen(program_config.arg) - 1] = 0;
+
   /* Are we processing a regular file, or a directory? */
   if (is_file(program_config.arg) == 0)
     process_file(program_config, program_config.arg, outstream, &processed_stats);
