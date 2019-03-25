@@ -76,6 +76,13 @@ char* command_to_str(const char* fmt, const char* arg) {
   return str;
 }
 
+void log_event(pid_t pid, const char* act) {
+  FILE* logfile = fopen(getenv("LOGFILENAME"), "a");
+  /* TODO: Need to measure time until this point somehow */
+  fprintf(logfile, "%s - %08d - %s\n", "inst", pid, act);
+  fclose(logfile);
+}
+
 void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   /* Program usage */
   const char* usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
@@ -109,13 +116,6 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
         break;
       case 'v':
         program_config->v_flag = 1;
-
-        if (getenv("LOGFILENAME")) {
-          program_config->logfile = getenv("LOGFILENAME");
-        } else {
-          printf("LOGFILENAME env variable not set, using 'log.txt' by default\n");
-          program_config->logfile = "log.txt";
-        }
         break;
       case '?':
         err = 1;
@@ -178,6 +178,15 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
     if (file_exists(program_config->o_value) == 0) {
       fprintf(stderr, "-o %s : file already exists\n", program_config->o_value);
       exit(1);
+    }
+  }
+
+  /* If v option set */
+  if (program_config->v_flag) {
+    /* If the env variable is not set, or if it does not point to a file */
+    if (getenv("LOGFILENAME") == NULL || is_file(getenv("LOGFILENAME")) != 0) {
+      printf("LOGFILENAME env variable not set, using 'log.txt' by default\n");
+      setenv("LOGFILENAME", "log.txt", 1);
     }
   }
 
@@ -318,6 +327,13 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   free(file_modified_date);
   free(file_accessed_date);
 
+  /* Log this event */
+  if (program_config.v_flag) {
+    char act[100];
+    sprintf(act, "ANALYZED %s", fname);
+    log_event(getpid(), act);
+  }
+
   processed_stats->files_processed++;
 }
 
@@ -343,7 +359,7 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
         strcpy(name, dname);
         strcat(name, "/");
         strcat(name, ent->d_name);
-
+      
         /* Ignore anything that isn't a file or a directory */
         if (is_file(name) != 0 && is_directory(name) != 0)
           continue;
@@ -354,7 +370,7 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
         } else if (is_file(name) == 0) {
           /* Found a file */
           process_file(program_config, name, outstream, processed_stats);
-      }
+        }
       }
     } else {
       /* Error opening directory */

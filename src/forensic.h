@@ -1,6 +1,7 @@
 #ifndef FORENSIC_H
 #define FORENSIC_H
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -81,6 +82,23 @@ char* time_to_iso_str(const time_t time);
  * @return char* Output of command as string (dynamic, must be freed)
  */
 char* command_to_str(const char* fmt, const char* arg);
+
+/**
+ * @brief Logs an event.
+ * 
+ * Uses the environment variable LOGFILENAME to know
+ * where to write an event to.
+ * 
+ * Events have the following form:
+ * "inst - pid - act", where:
+ * inst -> Time taken (milliseconds) since starting program execution
+ * pid -> Process identifier
+ * act -> Event description, i.e., what happened
+ * 
+ * @param pid 
+ * @param act 
+ */
+void log_event(pid_t pid, const char* act);
 
 /**
  * Parses arguments (using getopt) and fills a ProgramConfig struct.
