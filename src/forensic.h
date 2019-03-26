@@ -112,7 +112,17 @@ void log_event(pid_t pid, const char* act);
 void parse_args(int argc, char** argv, ProgramConfig* program_config);
 
 /**
- * @brief Main program logic function.
+ * @brief Decides how to process the command line argument, 
+ * performing some setup if needed.
+ * 
+ * If -v flag enabled, clears the logfile contents.
+ * If -o flag enabled, chooses the output stream based on the option value.
+ *    Uses stdout by default.
+ * If the argument is a directory, it might have a trailing '/' character.
+ *    If it does, it is stripped from the string.
+ * If the argument is a file, calls process_file(), passing it along.
+ *    Otherwise, calls process_dir(), passing it along.
+ * If -o flag enabled, closes the output stream.
  * 
  * @param program_config ProgramConfig struct
  */
@@ -120,6 +130,15 @@ void process(const ProgramConfig program_config);
 
 /**
  * @brief Processes a single, regular file.
+ * 
+ * Collects file data using the stat system call, parsing the returned struct 
+ * values in order to present them according to project specification.
+ * 
+ * The file data isn't stored anywhere outside this function, it is sent
+ * directly to the stream specified with the -o option, stdout if not applicable.
+ * 
+ * If -h flag enabled, goes through every hash option given and retrieves
+ * the hash of the file in question using command_to_str().
  * 
  * @param program_config ProgramConfig struct
  * @param fname File name
@@ -131,6 +150,7 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
 /**
  * @brief Processes a directory, i.e., all regular files inside a directory.
  * If -r flag enabled, also processes subdirectories, recursively.
+ * For every directory found, spawns a new system process to handle it, with fork().
  * 
  * @param program_config ProgramConfig struct
  * @param dname Directory name
