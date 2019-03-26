@@ -229,10 +229,14 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
 }
 
 void process(const ProgramConfig program_config) {
+  /* If -v flag enabled, clear the logfile before processing */
+  if (program_config.v_flag)
+    fclose(fopen(getenv("LOGFILENAME"), "w"));
+
   /* Choose output stream (stdout if -o flag disabled) */
   FILE* outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
   
-  /* Gather some processed statistics */
+  /* Use this to collect stats about files/dirs processed */
   ProcessedStats processed_stats = empty_processed_stats;
 
   /* In case of a directory, strip the trailing '/' character from it if exists */
