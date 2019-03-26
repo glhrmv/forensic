@@ -17,12 +17,12 @@ int main(int argc, char** argv) {
   /* Modify program_config according to argv */
   parse_args(argc, argv, &program_config);
 
-  fprintf(stdout, "Processing...\n");
+  fprintf(stdout, "Processing... (remove this when project done)\n\n");
 
   /* Begin processing */
   process(program_config);
 
-  fprintf(stdout, "Done.\n");
+  fprintf(stdout, "\nDone. (remove this when project done)\n");
 
   exit(0);
 }
@@ -76,10 +76,10 @@ char* command_to_str(const char* fmt, const char* arg) {
   return str;
 }
 
-void log_event(pid_t pid, const char* act) {
+void log_event(const char* act) {
   FILE* logfile = fopen(getenv("LOGFILENAME"), "a");
   /* TODO: Need to measure time until this point somehow */
-  fprintf(logfile, "%s - %08d - %s\n", "inst", pid, act);
+  fprintf(logfile, "%s - %08d - %s\n", "inst", getpid(), act);
   fclose(logfile);
 }
 
@@ -245,9 +245,9 @@ void process(const ProgramConfig program_config) {
 
   /* Are we processing a regular file, or a directory? */
   if (is_file(program_config.arg) == 0)
-    process_file(program_config, program_config.arg, outstream, &processed_stats);
+    process_file(program_config, program_config.arg, outstream);
   else
-    process_dir(program_config, program_config.arg, outstream, &processed_stats);
+    process_dir(program_config, program_config.arg, outstream);
 
   /* Temporary print message for test purposes, should be removed soon */
   fprintf(stdout, "Processed stats: %zu files / %zu dirs\n", processed_stats.files_processed, processed_stats.dirs_processed);
@@ -261,7 +261,7 @@ void process(const ProgramConfig program_config) {
   }
 }
 
-void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream, ProcessedStats* processed_stats) {
+void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream) {
    /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
   if (stat(fname, &file_stat) < 0) {
@@ -323,7 +323,7 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
     }
   }
 
-  /* We're done */
+  /* We're done, insert a newline */
   fprintf(outstream, "\n");
 
   /* Free dynamically allocated memory */
@@ -334,14 +334,12 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   /* Log this event */
   if (program_config.v_flag) {
     char act[100];
-    sprintf(act, "ANALYZED %s", fname);
-    log_event(getpid(), act);
+    sprintf(act, "PROCESSED FILE %s", fname);
+    log_event(act);
   }
-
-  processed_stats->files_processed++;
 }
 
-void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream, ProcessedStats* processed_stats) {
+void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream) {
   /* Create a new process */
   pid_t pid = fork();
 
@@ -370,10 +368,10 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
 
         if (is_directory(name) == 0 && program_config.r_flag) {
           /* Found a subdirectory, process it if -r flag enabled */
-          process_dir(program_config, name, outstream, processed_stats);
+          process_dir(program_config, name, outstream);
         } else if (is_file(name) == 0) {
           /* Found a file */
-          process_file(program_config, name, outstream, processed_stats);
+          process_file(program_config, name, outstream);
         }
       }
     } else {
@@ -387,5 +385,12 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
   } else {
     /* Parent process */
     wait(NULL);
+
+    /* Log this event */
+    if (program_config.v_flag) {
+      char act[100];
+      sprintf(act, "PROCESSED DIR %s", dname);
+      log_event(act);
+    }
   }
 }

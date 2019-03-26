@@ -7,6 +7,7 @@
 
 /**
  * @brief A structure to represent the program's configuration.
+ * It is set in the parse_args() routine and ideally not changed elsewhere.
  */
 typedef struct ProgramConfig {
   int debug_flag; // Debug flag
@@ -23,6 +24,10 @@ typedef struct ProgramConfig {
   char* arg; // Argument passed to program (file or directory)
 } ProgramConfig;
 
+/**
+ * @brief A structure to keep track of the number 
+ * of files & directories processed by the program.
+ */
 typedef struct ProcessedStats {
   size_t files_processed; // Number of files processed
   size_t dirs_processed; // Number of directories processed
@@ -95,10 +100,9 @@ char* command_to_str(const char* fmt, const char* arg);
  * pid -> Process identifier
  * act -> Event description, i.e., what happened
  * 
- * @param pid ID of the process in charge of the event
  * @param act Description of the event
  */
-void log_event(pid_t pid, const char* act);
+void log_event(const char* act);
 
 /**
  * Parses arguments (using getopt) and fills a ProgramConfig struct.
@@ -143,9 +147,8 @@ void process(const ProgramConfig program_config);
  * @param program_config ProgramConfig struct
  * @param fname File name
  * @param outstream Output stream to write processed data to
- * @param processed_stats ProcessedStats struct
  */
-void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream, ProcessedStats* processed_stats);
+void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream);
 
 /**
  * @brief Processes a directory, i.e., all regular files inside a directory.
@@ -155,9 +158,8 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
  * @param program_config ProgramConfig struct
  * @param dname Directory name
  * @param outstream Output stream to write processed data to
- * @param processed_stats ProcessedStats struct
  */
-void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream, ProcessedStats* processed_stats);
+void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream);
 
 #endif
 
