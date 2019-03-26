@@ -95,8 +95,8 @@ char* command_to_str(const char* fmt, const char* arg);
  * pid -> Process identifier
  * act -> Event description, i.e., what happened
  * 
- * @param pid 
- * @param act 
+ * @param pid ID of the process in charge of the event
+ * @param act Description of the event
  */
 void log_event(pid_t pid, const char* act);
 
