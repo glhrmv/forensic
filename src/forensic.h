@@ -41,14 +41,14 @@ typedef struct ProcessedStats {
  */
 /* Empty ProgramConfig struct */
 static const ProgramConfig empty_program_config;
-/* Empty ProcessesStats struct */
+/* Empty ProcessedStats struct */
 static const ProcessedStats empty_processed_stats;
 
 /**
  * @brief Checks if file exists on disk.
  * 
  * @param pathname Path name
- * @return Zero on success, non-zero otherwise
+ * @return int Zero on success, non-zero otherwise
  */
 int file_exists(const char* pathname);
 
@@ -84,7 +84,7 @@ char* time_to_iso_str(const time_t time);
  * For example, when invoked with command_to_str("file -b %s", "Makefile"),
  * it will return `makefile script text, ASCII text`.
  * 
- * @param fmt Formatted string
+ * @param fmt String with possible printf-like format specifiers
  * @param arg Argument to send to command
  * @return char* Output of command as string (dynamic, must be freed)
  */
@@ -94,15 +94,14 @@ char* command_to_str(const char* fmt, const char* arg);
  * @brief Logs an event.
  * 
  * Uses the environment variable LOGFILENAME to know
- * where to write an event to.
+ * where to write the event to.
  * 
- * Events have the following form:
- * "inst - pid - act", where:
+ * Events have the following form: "inst - pid - act", where:
  * inst -> Time taken (milliseconds) since starting program execution
  * pid -> Process identifier
  * act -> Event description, i.e., what happened
  * 
- * @param act Description of the event
+ * @param act Event description, a string with possible printf-like format specifiers
  */
 void log_event(const char* act);
 
@@ -110,7 +109,8 @@ void log_event(const char* act);
  * @brief Parses arguments (using getopt) and fills a ProgramConfig struct.
  * 
  * If any of the parameters are invalid/unexpected, prints error message(s)
- * to stderr and exits with status code 1.
+ * to stderr and exits with status code 1. Essentially, it checks for potential
+ * errors before beginning processing.
  * 
  * @param argc Argument count (from main())
  * @param argv Argument vector (from main())
@@ -120,15 +120,15 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config);
 
 /**
  * @brief Decides how to process the command line argument, 
- * performing some setup if needed.
+ * performing some setup if needed. It follows these steps:
  * 
  * If -v flag enabled, clears the logfile contents.
- * If -o flag enabled, chooses the output stream based on the option value.
- *    Uses stdout by default.
+ * If -o flag enabled, chooses the output stream based on the option's value.
+ *    Uses stdout by default, i.e., if -o not enabled.
  * If the argument is a directory, it might have a trailing '/' character.
- *    If it does, it is stripped from the string.
- * If the argument is a file, calls process_file(), passing it along.
- *    Otherwise, calls process_dir(), passing it along.
+ *    If it does, it is stripped from the argument string.
+ * If the argument is a file, calls process_file().
+ *    Otherwise, calls process_dir().
  * If -o flag enabled, closes the output stream.
  * 
  * @param program_config ProgramConfig struct
@@ -139,10 +139,10 @@ void process(const ProgramConfig program_config);
  * @brief Processes a single, regular file.
  * 
  * Collects file data using the stat system call, parsing the returned struct 
- * values in order to present them according to project specification.
+ * values in order to present them according to the project specification.
  * 
  * The file data isn't stored anywhere outside this function, it is sent
- * directly to the stream specified with the -o option, stdout if not applicable.
+ * directly to the output stream given.
  * 
  * If -h flag enabled, goes through every hash option given and retrieves
  * the hash of the file in question using command_to_str().
@@ -166,4 +166,3 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
 void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream);
 
 #endif
-
