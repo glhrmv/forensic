@@ -1,19 +1,19 @@
 # forensic
 
-```
+```sh
 forensic [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>
 ```
 
 Command-line utility that performs a forensic analysis over a given file or directory.
 
-```bash
+```sh
 $ ./forensic Makefile
 Makefile,makefile,664,rw,2019-03-23T19:41:26,2019-03-23T19:41:26
 ```
 
 If given a directory, the program processes every file inside the directory, individually.
 
-```
+```sh
 $ ./forensic src
 src/forensic.c,c,11598,rw,2019-03-26T16:06:48,2019-03-26T16:06:48
 src/forensic.o,Mach-O,10912,rw,2019-03-26T16:07:27,2019-03-26T16:07:27
@@ -22,7 +22,7 @@ src/forensic.h,c,5463,rw,2019-03-26T15:52:34,2019-03-26T15:52:34
 
 The program output is in the following format:
 
-```
+```sh
 file_name,file_type,file_size,file_permissions,file_modified_data,file_accessed_date,md5,sha1,sha256
 ```
 
