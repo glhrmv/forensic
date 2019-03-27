@@ -7,6 +7,7 @@
 
 /**
  * @brief A structure to represent the program's configuration.
+ * 
  * It is set in the parse_args() routine and ideally not changed elsewhere.
  */
 typedef struct ProgramConfig {
@@ -76,13 +77,14 @@ int is_directory(const char* pathname);
 char* time_to_iso_str(const time_t time);
 
 /**
- * @brief Calls a specified command, returning its stdout output.
+ * @brief Calls a specified command, returning its stdout output as a string.
+ * 
  * Only supports single-argument program calls.
  * 
  * For example, when invoked with command_to_str("file -b %s", "Makefile"),
- * it will return `makefile script text, ASCII text`
+ * it will return `makefile script text, ASCII text`.
  * 
- * @param fmt Format string
+ * @param fmt Formatted string
  * @param arg Argument to send to command
  * @return char* Output of command as string (dynamic, must be freed)
  */
@@ -105,7 +107,8 @@ char* command_to_str(const char* fmt, const char* arg);
 void log_event(const char* act);
 
 /**
- * Parses arguments (using getopt) and fills a ProgramConfig struct.
+ * @brief Parses arguments (using getopt) and fills a ProgramConfig struct.
+ * 
  * If any of the parameters are invalid/unexpected, prints error message(s)
  * to stderr and exits with status code 1.
  * 
@@ -152,8 +155,9 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
 
 /**
  * @brief Processes a directory, i.e., all regular files inside a directory.
- * If -r flag enabled, also processes subdirectories, recursively.
- * For every directory found, spawns a new system process to handle it, with fork().
+ * 
+ * If -r flag enabled, also processes subdirectories found, recursively.
+ * The processing of a directory is done with a child process, using fork().
  * 
  * @param program_config ProgramConfig struct
  * @param dname Directory name

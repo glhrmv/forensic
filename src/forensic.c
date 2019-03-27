@@ -17,13 +17,10 @@ int main(int argc, char** argv) {
   /* Modify program_config according to argv */
   parse_args(argc, argv, &program_config);
 
-  fprintf(stdout, "Processing... (remove this when project done)\n\n");
-
   /* Begin processing */
   process(program_config);
 
-  fprintf(stdout, "\nDone. (remove this when project done)\n");
-
+  /* Everything went well */
   exit(0);
 }
 
@@ -33,18 +30,12 @@ int file_exists(const char* pathname) {
 
 int is_file(const char* pathname) {
   struct stat path_stat;
-  if (stat(pathname, &path_stat) == 0 && S_ISREG(path_stat.st_mode)) 
-    return 0;
-  else
-    return -1;
+  return (stat(pathname, &path_stat) == 0 && S_ISREG(path_stat.st_mode)) ? 0 : -1;
 }
 
 int is_directory(const char* pathname) {
   struct stat path_stat;
-  if (stat(pathname, &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) 
-    return 0;
-  else
-    return -1;
+  return (stat(pathname, &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) ? 0 : -1;
 }
 
 char* time_to_iso_str(const time_t tm) {
@@ -188,6 +179,15 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
       printf("LOGFILENAME env variable not set, using 'log.txt' by default\n");
       setenv("LOGFILENAME", "log.txt", 1);
     }
+
+    /* Don't allow the user to use the output file as the logfile or vice-versa */
+    if (program_config->o_flag) {
+      if (strcmp(getenv("LOGFILENAME"), program_config->o_value) == 0) {
+        fprintf(stderr, "cannot use the logfile as the output file or vice-versa\n");
+        fprintf(stderr, usage, argv[0]);
+        exit(1);
+      }
+    }
   }
 
   /* The first argument after options is what we want */
@@ -239,6 +239,8 @@ void process(const ProgramConfig program_config) {
   /* Use this to collect stats about files/dirs processed */
   ProcessedStats processed_stats = empty_processed_stats;
 
+  fprintf(stdout, "Processing... (remove this when project done)\n\n");
+
   /* In case of a directory, strip the trailing '/' character from it if exists */
   if (program_config.arg[strlen(program_config.arg) - 1] == '/')
     program_config.arg[strlen(program_config.arg) - 1] = 0;
@@ -259,6 +261,8 @@ void process(const ProgramConfig program_config) {
     /* Notify user of saved file through stdout */
     fprintf(stdout, "Data saved on file \"%s\"\n", program_config.o_value);
   }
+
+  fprintf(stdout, "\nDone. (remove this when project done)\n");
 }
 
 void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream) {
