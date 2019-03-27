@@ -38,3 +38,4 @@ Run `make` in the root directory to build an executable named `forensic`.
 - `-h`: Gets the hashed checksum of the file in question. Accepts `md5`, `sha1`, `sha256`, in any order (but always prints them in that order).
 - `-o`: Defines the output stream where to print the processed file details to. If not specified, `stdout` is used. The output stream must be a regular file.
 - `-v`: Generates a logfile with a record of events logged by the program. The logfile name is dependant on the `LOGFILENAME` environment variable sent to the program. If not set, `log.txt` is used as the default file name. The logfile is always cleared before processing begins, i.e., previous execution logs are not kept.
+- `-d`: Debug flag. Prints program configuration after parsing command-line arguments.
