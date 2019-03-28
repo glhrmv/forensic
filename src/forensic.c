@@ -5,12 +5,19 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
 #include <dirent.h>
 
+/* Program start timestamp declaration */
+struct timeval start_time;
+
 int main(int argc, char** argv) {
+  /* Program start timestamp assignment */
+  gettimeofday(&start_time, 0);
+
   /* Declare and initialize program config */
   ProgramConfig program_config = empty_program_config;
 
@@ -69,8 +76,15 @@ char* command_to_str(const char* fmt, const char* arg) {
 
 void log_event(const char* act) {
   FILE* logfile = fopen(getenv("LOGFILENAME"), "a");
-  /* TODO: Need to measure time until this point somehow */
-  fprintf(logfile, "%s - %08d - %s\n", "inst", getpid(), act);
+
+  /* Measure time until this point */
+  struct timeval this_time;
+  gettimeofday(&this_time, 0);
+  float elapsed = (this_time.tv_sec - start_time.tv_sec) * 1000.0f + (this_time.tv_usec - start_time.tv_usec) / 1000.0f;
+
+  /* Log the event */
+  fprintf(logfile, "%.2f - %08d - %s\n", elapsed, getpid(), act);
+  
   fclose(logfile);
 }
 
@@ -330,17 +344,17 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   /* We're done, insert a newline */
   fprintf(outstream, "\n");
 
-  /* Free dynamically allocated memory */
-  free(file_type);
-  free(file_modified_date);
-  free(file_accessed_date);
-
   /* Log this event */
   if (program_config.v_flag) {
     char act[100];
     sprintf(act, "PROCESSED FILE %s", fname);
     log_event(act);
   }
+
+  /* Free dynamically allocated memory */
+  free(file_type);
+  free(file_modified_date);
+  free(file_accessed_date);
 }
 
 void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream) {
