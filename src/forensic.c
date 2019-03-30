@@ -10,11 +10,39 @@
 #include <time.h>
 #include <string.h>
 #include <dirent.h>
+#include <signal.h>
 
 /* Program start timestamp declaration */
 struct timeval start_time;
 
+/* Global counters */
+size_t files_processed = 0;
+size_t dirs_processed = 0;
+
+void sigusr1_handler(int sig) {
+  
+}
+
+void sigusr2_handler(int sig) {
+  
+}
+
 int main(int argc, char** argv) {
+  /* Set up signal handlers */
+  /* USR1 */
+  struct sigaction usr1_action;
+  usr1_action.sa_handler = sigusr1_handler;
+  sigemptyset(&usr1_action.sa_mask);
+  usr1_action.sa_flags = 0;
+  sigaction(SIGUSR1, &usr1_action, NULL);
+
+  /* USR2 */
+  struct sigaction usr2_action;
+  usr2_action.sa_handler = sigusr2_handler;
+  sigemptyset(&usr2_action.sa_mask);
+  usr2_action.sa_flags = 0;
+  sigaction(SIGUSR2, &usr2_action, NULL);
+
   /* Program start timestamp assignment */
   gettimeofday(&start_time, 0);
 
@@ -80,7 +108,9 @@ void log_event(const char* act) {
   /* Measure time until this point */
   struct timeval this_time;
   gettimeofday(&this_time, 0);
-  float elapsed = (this_time.tv_sec - start_time.tv_sec) * 1000.0f + (this_time.tv_usec - start_time.tv_usec) / 1000.0f;
+  float elapsed;
+  elapsed = (this_time.tv_sec - start_time.tv_sec) * 1000.0f; 
+  elapsed += (this_time.tv_usec - start_time.tv_usec) / 1000.0f;
 
   /* Log the event */
   fprintf(logfile, "%.2f - %08d - %s\n", elapsed, getpid(), act);
@@ -250,9 +280,6 @@ void process(const ProgramConfig program_config) {
   /* Choose output stream (stdout if -o flag disabled) */
   FILE* outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
   
-  /* Use this to collect stats about files/dirs processed */
-  ProcessedStats processed_stats = empty_processed_stats;
-
   fprintf(stdout, "Processing... (remove this when project done)\n\n");
 
   /* In case of a directory, strip the trailing '/' character from it if exists */
@@ -264,9 +291,6 @@ void process(const ProgramConfig program_config) {
     process_file(program_config, program_config.arg, outstream);
   else
     process_dir(program_config, program_config.arg, outstream);
-
-  /* Temporary print message for test purposes, should be removed soon */
-  fprintf(stdout, "Processed stats: %zu files / %zu dirs\n", processed_stats.files_processed, processed_stats.dirs_processed);
 
   /* Close output stream (if -o flag enabled) */
   if (program_config.o_flag) {
@@ -370,6 +394,10 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
     if ((dir = opendir(dname)) != NULL) {
       /* Go through each file in this directory */
       while ((ent = readdir (dir)) != NULL) {
+        /* Ignore anything that isn't a file or a directory */
+        if (ent->d_type != DT_DIR  &&  ent->d_type != DT_REG)
+          continue;
+
         /* Ignore the '.' and '..' directories */
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
           continue;
@@ -379,16 +407,12 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
         strcpy(name, dname);
         strcat(name, "/");
         strcat(name, ent->d_name);
-      
-        /* Ignore anything that isn't a file or a directory */
-        if (is_file(name) != 0 && is_directory(name) != 0)
-          continue;
 
-        if (is_directory(name) == 0 && program_config.r_flag) {
+        if (ent->d_type == DT_DIR && program_config.r_flag) {
           /* Found a subdirectory, process it if -r flag enabled */
           process_dir(program_config, name, outstream);
-        } else if (is_file(name) == 0) {
-          /* Found a file */
+        } else {
+          /* Found a file, process it */
           process_file(program_config, name, outstream);
         }
       }

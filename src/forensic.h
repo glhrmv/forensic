@@ -26,23 +26,11 @@ typedef struct ProgramConfig {
 } ProgramConfig;
 
 /**
- * @brief A structure to keep track of the number 
- * of files & directories processed by the program.
- */
-typedef struct ProcessedStats {
-  size_t files_processed; // Number of files processed
-  size_t dirs_processed; // Number of directories processed
-} ProcessedStats;
-
-/**
- * Declare a const static instance of each of our structs
+ * Declare a const static instance of a ProgramConfig struct
  * which will have all of their fields initialized due to static initialization.
  * See: https://stackoverflow.com/a/6891731/6304441
  */
-/* Empty ProgramConfig struct */
 static const ProgramConfig empty_program_config;
-/* Empty ProcessedStats struct */
-static const ProcessedStats empty_processed_stats;
 
 /**
  * @brief Checks if file exists on disk.
