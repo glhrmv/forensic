@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
@@ -322,7 +323,7 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   /* Print file data */
   fprintf(outstream, "%s,", file_name);
   fprintf(outstream, "%s,", file_type);
-  fprintf(outstream, "%llu,", file_size);
+  fprintf(outstream, "%lu,", file_size);
   /* File permissions stuff, needs work (should be put in file_access_owner) */
   if (S_ISDIR(file_stat.st_mode))
     fprintf(outstream, "d");
