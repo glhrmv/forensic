@@ -17,29 +17,35 @@
 struct timeval start_time;
 
 /* Global counters */
-size_t filesFound = 0;
-size_t dirsFound = 0;
+volatile size_t filesFound = 0;
+volatile size_t dirsFound = 0;
 
-void sigusr1_handler(int sig) {
+void sigusr1_handler(int sig)
+{
   if (sig != SIGUSR1)
   {
     fprintf(stderr, "Wrong signal recieved! Expected: SIGUSR1\n");
+    fflush(stderr);
   }
 
   dirsFound++;
-  printf("New directory: %ld/%ld directories/files at this time.\n",dirsFound,filesFound);
+  printf("=== New directory: %ld/%ld directories/files at this time.\n", dirsFound, filesFound);
+  fflush(stdout);
 }
 
-void sigusr2_handler(int sig) {
-   if (sig != SIGUSR2)
+void sigusr2_handler(int sig)
+{
+  if (sig != SIGUSR2)
   {
     fprintf(stderr, "Wrong signal recieved! Expected: SIGUSR2\n");
+    fflush(stderr);
   }
 
   filesFound++;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   /* Set up signal handlers */
   /* USR1 */
   struct sigaction usr1_action;
@@ -71,41 +77,47 @@ int main(int argc, char** argv) {
   exit(0);
 }
 
-int file_exists(const char* pathname) {
+int file_exists(const char *pathname)
+{
   return access(pathname, F_OK);
 }
 
-int is_file(const char* pathname) {
+int is_file(const char *pathname)
+{
   struct stat path_stat;
   return (stat(pathname, &path_stat) == 0 && S_ISREG(path_stat.st_mode)) ? 0 : -1;
 }
 
-int is_directory(const char* pathname) {
+int is_directory(const char *pathname)
+{
   struct stat path_stat;
   return (stat(pathname, &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) ? 0 : -1;
 }
 
-char* time_to_iso_str(const time_t tm) {
-  char* buffer = malloc(256);
+char *time_to_iso_str(const time_t tm)
+{
+  char *buffer = malloc(256);
   strftime(buffer, 256, "%FT%T", localtime(&tm));
   return buffer;
 }
 
-char* command_to_str(const char* fmt, const char* arg) {
+char *command_to_str(const char *fmt, const char *arg)
+{
   /* Fill out command string according to format */
   char command[256];
   sprintf(command, fmt, arg);
 
   /* Open pipe & run command */
-  FILE* fp = popen(command, "r");
+  FILE *fp = popen(command, "r");
 
-  if (fp == NULL) {
+  if (fp == NULL)
+  {
     fprintf(stderr, "error running command\n");
     exit(1);
   }
 
   /* Fill char* */
-  char* str = malloc(256);
+  char *str = malloc(256);
   fscanf(fp, "%s\n", str);
 
   /* Close pipe */
@@ -114,93 +126,104 @@ char* command_to_str(const char* fmt, const char* arg) {
   return str;
 }
 
-void log_event(const char* act) {
-  FILE* logfile = fopen(getenv("LOGFILENAME"), "a");
+void log_event(const char *act)
+{
+  FILE *logfile = fopen(getenv("LOGFILENAME"), "a");
 
   /* Measure time until this point */
   struct timeval this_time;
   gettimeofday(&this_time, 0);
   float elapsed;
-  elapsed = (this_time.tv_sec - start_time.tv_sec) * 1000.0f; 
+  elapsed = (this_time.tv_sec - start_time.tv_sec) * 1000.0f;
   elapsed += (this_time.tv_usec - start_time.tv_usec) / 1000.0f;
 
   /* Log the event */
   fprintf(logfile, "%.2f - %08d - %s\n", elapsed, getpid(), act);
-  
+
   fclose(logfile);
 }
 
-void parse_args(int argc, char** argv, ProgramConfig* program_config) {
+void parse_args(int argc, char **argv, ProgramConfig *program_config)
+{
   /* Program usage */
-  const char* usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
+  const char *usage = "usage: %s [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>\n";
 
   /* Using getopt to parse args */
-  extern char* optarg;
+  extern char *optarg;
   extern int optind;
   int c, err = 0;
 
-  while ((c = getopt(argc, argv, "drh:o:v")) != -1) {
-    switch (c) {
-      case 'd':
-        program_config->debug_flag = 1;
-        break;
-      case 'r':
-        program_config->r_flag = 1;
-        break;
-      case 'h':
-        if (program_config->h_flag)
-          fprintf(stdout, "(warning) -h is set multiple times\n");
+  while ((c = getopt(argc, argv, "drh:o:v")) != -1)
+  {
+    switch (c)
+    {
+    case 'd':
+      program_config->debug_flag = 1;
+      break;
+    case 'r':
+      program_config->r_flag = 1;
+      break;
+    case 'h':
+      if (program_config->h_flag)
+        fprintf(stdout, "(warning) -h is set multiple times\n");
 
-        program_config->h_flag = 1;
-        program_config->h_value = optarg;
-        break;
-      case 'o':
-        if (program_config->o_flag)
-          fprintf(stdout, "(warning) -o is set multiple times\n");
+      program_config->h_flag = 1;
+      program_config->h_value = optarg;
+      break;
+    case 'o':
+      if (program_config->o_flag)
+        fprintf(stdout, "(warning) -o is set multiple times\n");
 
-        program_config->o_flag = 1;
-        program_config->o_value = optarg;
-        break;
-      case 'v':
-        program_config->v_flag = 1;
-        break;
-      case '?':
-        err = 1;
-        break;
+      program_config->o_flag = 1;
+      program_config->o_value = optarg;
+      break;
+    case 'v':
+      program_config->v_flag = 1;
+      break;
+    case '?':
+      err = 1;
+      break;
     }
   }
 
   /* If invalid option */
-  if (err) {
+  if (err)
+  {
     fprintf(stderr, usage, argv[0]);
     exit(1);
   }
 
   /* If no arg (no file/dir specified) */
-  if (optind == argc) {
+  if (optind == argc)
+  {
     fprintf(stderr, usage, argv[0]);
     exit(1);
-  } 
+  }
 
   /* If h option set */
-  if (program_config->h_flag) {
+  if (program_config->h_flag)
+  {
     /* Parse the comma-delimited string */
-    char* str_to_parse = malloc(strlen(program_config->h_value) + 1);
+    char *str_to_parse = malloc(strlen(program_config->h_value) + 1);
     strcpy(str_to_parse, program_config->h_value);
 
-    char* token;
-    while ((token = strsep(&str_to_parse, ","))) {
-      if (strcmp(token, "md5") == 0) {
+    char *token;
+    while ((token = strsep(&str_to_parse, ",")))
+    {
+      if (strcmp(token, "md5") == 0)
+      {
         program_config->h_alg_md5_flag = 1;
         continue;
       }
 
-      if (strcmp(token, "sha1") == 0) {
+      if (strcmp(token, "sha1") == 0)
+      {
         program_config->h_alg_sha1_flag = 1;
         continue;
       }
 
-      if (strcmp(token, "sha256") == 0) {
+      if (strcmp(token, "sha256") == 0)
+      {
         program_config->h_alg_sha256_flag = 1;
         continue;
       }
@@ -212,7 +235,8 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
     free(str_to_parse);
 
     /* If none of the valid algorithms were input */
-    if (!program_config->h_alg_md5_flag && !program_config->h_alg_sha1_flag && !program_config->h_alg_sha256_flag) {
+    if (!program_config->h_alg_md5_flag && !program_config->h_alg_sha1_flag && !program_config->h_alg_sha256_flag)
+    {
       fprintf(stderr, "-h : no valid option found\n");
       fprintf(stderr, usage, argv[0]);
       exit(1);
@@ -220,25 +244,31 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   }
 
   /* If o option set */
-  if (program_config->o_flag) {
+  if (program_config->o_flag)
+  {
     /* Check if given file already exists */
-    if (file_exists(program_config->o_value) == 0) {
+    if (file_exists(program_config->o_value) == 0)
+    {
       fprintf(stderr, "-o %s : file already exists\n", program_config->o_value);
       exit(1);
     }
   }
 
   /* If v option set */
-  if (program_config->v_flag) {
+  if (program_config->v_flag)
+  {
     /* If the env variable is not set, or if it does not point to a file */
-    if (getenv("LOGFILENAME") == NULL || is_file(getenv("LOGFILENAME")) != 0) {
+    if (getenv("LOGFILENAME") == NULL || is_file(getenv("LOGFILENAME")) != 0)
+    {
       printf("LOGFILENAME env variable not set, using 'log.txt' by default\n");
       setenv("LOGFILENAME", "log.txt", 1);
     }
 
     /* Don't allow the user to use the output file as the logfile or vice-versa */
-    if (program_config->o_flag) {
-      if (strcmp(getenv("LOGFILENAME"), program_config->o_value) == 0) {
+    if (program_config->o_flag)
+    {
+      if (strcmp(getenv("LOGFILENAME"), program_config->o_value) == 0)
+      {
         fprintf(stderr, "cannot use the logfile as the output file or vice-versa\n");
         fprintf(stderr, usage, argv[0]);
         exit(1);
@@ -247,16 +277,18 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   }
 
   /* The first argument after options is what we want */
-  char* arg = argv[optind];
+  char *arg = argv[optind];
 
   /* Check if it's something that actually exists */
-  if (file_exists(arg) != 0) {
+  if (file_exists(arg) != 0)
+  {
     fprintf(stderr, "%s : does not exist\n", argv[optind]);
     exit(1);
-  } 
+  }
 
   /* Check if it's either a file or a directory (i.e., not socket, FIFO, symlink, etc.) */
-  if (is_file(arg) != 0 && is_directory(arg) != 0) {
+  if (is_file(arg) != 0 && is_directory(arg) != 0)
+  {
     fprintf(stderr, "%s : not a file/directory\n", argv[optind]);
     exit(1);
   }
@@ -265,33 +297,35 @@ void parse_args(int argc, char** argv, ProgramConfig* program_config) {
   program_config->arg = arg;
 
   /* Print options (when debug flag on) */
-  if (program_config->debug_flag) {
+  if (program_config->debug_flag)
+  {
     printf("--------------\n");
     printf("program config:\n");
-    printf("debug_flag = %d\n", program_config->debug_flag); 
-    printf("r_flag = %d\n", program_config->r_flag); 
-    printf("h_flag = %d\n", program_config->h_flag); 
-    printf("h_value = \"%s\"\n", program_config->h_value); 
+    printf("debug_flag = %d\n", program_config->debug_flag);
+    printf("r_flag = %d\n", program_config->r_flag);
+    printf("h_flag = %d\n", program_config->h_flag);
+    printf("h_value = \"%s\"\n", program_config->h_value);
     printf("h_alg_md5_flag = %d\n", program_config->h_alg_md5_flag);
     printf("h_alg_sha1_flag = %d\n", program_config->h_alg_sha1_flag);
     printf("h_alg_sha256_flag = %d\n", program_config->h_alg_sha256_flag);
-    printf("o_flag = %d\n", program_config->o_flag); 
+    printf("o_flag = %d\n", program_config->o_flag);
     printf("o_value = \"%s\"\n", program_config->o_value);
-    printf("v_flag = %d\n", program_config->v_flag); 
-    printf("logfile = \"%s\"\n", program_config->logfile); 
-    printf("arg value = \"%s\"\n", program_config->arg); 
+    printf("v_flag = %d\n", program_config->v_flag);
+    printf("logfile = \"%s\"\n", program_config->logfile);
+    printf("arg value = \"%s\"\n", program_config->arg);
     printf("--------------\n");
   }
 }
 
-void process(const ProgramConfig program_config) {
+void process(const ProgramConfig program_config)
+{
   /* If -v flag enabled, clear the logfile before processing */
   if (program_config.v_flag)
     fclose(fopen(getenv("LOGFILENAME"), "w"));
 
   /* Choose output stream (stdout if -o flag disabled) */
-  FILE* outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
-  
+  FILE *outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
+
   fprintf(stdout, "Processing... (remove this when project done)\n\n");
 
   /* In case of a directory, strip the trailing '/' character from it if exists */
@@ -305,7 +339,8 @@ void process(const ProgramConfig program_config) {
     process_dir(program_config, program_config.arg, outstream);
 
   /* Close output stream (if -o flag enabled) */
-  if (program_config.o_flag) {
+  if (program_config.o_flag)
+  {
     fclose(outstream);
 
     /* Notify user of saved file through stdout */
@@ -315,21 +350,24 @@ void process(const ProgramConfig program_config) {
   fprintf(stdout, "\nDone. (remove this when project done)\n");
 }
 
-void process_file(const ProgramConfig program_config, const char* fname, FILE* outstream) {
-   /* Fill a file statistics struct from arg passed */
+void process_file(const ProgramConfig program_config, const char *fname, FILE *outstream)
+{
+
+  /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
-  if (stat(fname, &file_stat) < 0) {
+  if (stat(fname, &file_stat) < 0)
+  {
     fprintf(stderr, "an error occurred retrieving file details\n");
     exit(1);
   }
 
   /* Gather file data */
-  const char* file_name = fname;
+  const char *file_name = fname;
   off_t file_size = file_stat.st_size;
-  char* file_type = command_to_str("file -b \"%s\"", fname);
-  char* file_access_owner = "";
-  char* file_modified_date = time_to_iso_str(file_stat.st_ctime);
-  char* file_accessed_date = time_to_iso_str(file_stat.st_mtime);
+  char *file_type = command_to_str("file -b \"%s\"", fname);
+  char *file_access_owner = "";
+  char *file_modified_date = time_to_iso_str(file_stat.st_ctime);
+  char *file_accessed_date = time_to_iso_str(file_stat.st_mtime);
 
   /* Print file data */
   fprintf(outstream, "%s,", file_name);
@@ -341,10 +379,10 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
 
   if (file_stat.st_mode & S_IRUSR)
     fprintf(outstream, "r");
-  
+
   if (file_stat.st_mode & S_IWUSR)
     fprintf(outstream, "w");
-  
+
   if (file_stat.st_mode & S_IXUSR)
     fprintf(outstream, "x");
 
@@ -353,26 +391,30 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   fprintf(outstream, "%s", file_accessed_date);
 
   /* Are we human or are we hashing? */
-  if (program_config.h_flag) {
-    if (program_config.h_alg_md5_flag) {
+  if (program_config.h_flag)
+  {
+    if (program_config.h_alg_md5_flag)
+    {
       /* Get MD5 checksum */
       //char* md5_hash = command_to_str("md5 \"%s\" | rev | cut -d ' ' -f1 | rev", fname); /* macOS*/
-      char* md5_hash = command_to_str("md5sum \"%s\" | rev | cut -d ' ' -f1 | rev", fname);  /* Linux*/
+      char *md5_hash = command_to_str("md5sum \"%s\" | rev | cut -d ' ' -f1 | rev", fname); /* Linux*/
       fprintf(outstream, ",%s", md5_hash);
       free(md5_hash);
     }
 
-    if (program_config.h_alg_sha1_flag) {
+    if (program_config.h_alg_sha1_flag)
+    {
       /* Get SHA1 checksum */
-      char* sha1_hash = command_to_str("shasum \"%s\" | awk '{print $1}'", fname);
+      char *sha1_hash = command_to_str("shasum \"%s\" | awk '{print $1}'", fname);
       fprintf(outstream, ",%s", sha1_hash);
       free(sha1_hash);
     }
 
-    if (program_config.h_alg_sha256_flag) {
+    if (program_config.h_alg_sha256_flag)
+    {
       /* Get SHA256 checksum */
-      char* sha256_hash = command_to_str("shasum -a 256 \"%s\" | awk '{print $1}'", fname);
-      fprintf(outstream, ",%s",sha256_hash);
+      char *sha256_hash = command_to_str("shasum -a 256 \"%s\" | awk '{print $1}'", fname);
+      fprintf(outstream, ",%s", sha256_hash);
       free(sha256_hash);
     }
   }
@@ -381,7 +423,8 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   fprintf(outstream, "\n");
 
   /* Log this event */
-  if (program_config.v_flag) {
+  if (program_config.v_flag)
+  {
     char act[100];
     sprintf(act, "PROCESSED FILE %s", fname);
     log_event(act);
@@ -393,21 +436,26 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   free(file_accessed_date);
 }
 
-void process_dir(const ProgramConfig program_config, const char* dname, FILE* outstream) {
+void process_dir(const ProgramConfig program_config, const char *dname, FILE *outstream)
+{
+
   /* Create a new process */
   pid_t pid = fork();
 
-  if (pid == 0) {
+  if (pid == 0)
+  {
     /* Child process */
     struct dirent *ent;
-    DIR* dir;
+    DIR *dir;
 
     /* Open directory */
-    if ((dir = opendir(dname)) != NULL) {
+    if ((dir = opendir(dname)) != NULL)
+    {
       /* Go through each file in this directory */
-      while ((ent = readdir (dir)) != NULL) {
+      while ((ent = readdir(dir)) != NULL)
+      {
         /* Ignore anything that isn't a file or a directory */
-        if (ent->d_type != DT_DIR  &&  ent->d_type != DT_REG)
+        if (ent->d_type != DT_DIR && ent->d_type != DT_REG)
           continue;
 
         /* Ignore the '.' and '..' directories */
@@ -420,29 +468,39 @@ void process_dir(const ProgramConfig program_config, const char* dname, FILE* ou
         strcat(name, "/");
         strcat(name, ent->d_name);
 
-        if (ent->d_type == DT_DIR && program_config.r_flag) {
+        if (ent->d_type == DT_DIR && program_config.r_flag)
+        {
           /* Found a subdirectory, process it if -r flag enabled */
           process_dir(program_config, name, outstream);
-        } else {
+        }
+        else
+        {
           /* Found a file, process it */
           process_file(program_config, name, outstream);
         }
       }
-    } else {
+    }
+    else
+    {
       /* Error opening directory */
     }
 
-    /* Exit from child process */ 
+    /* Exit from child process */
     exit(0);
-  } else if (pid < 0) {
+  }
+  else if (pid < 0)
+  {
     /* Error creating process */
-  } else {
+  }
+  else
+  {
     /* Parent process */
     wait(NULL);
 
     /* Log this event */
-    if (program_config.v_flag) {
-      char act[100];
+    if (program_config.v_flag)
+    {
+      char act[256];
       sprintf(act, "PROCESSED DIR %s", dname);
       log_event(act);
     }
