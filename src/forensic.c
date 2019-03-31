@@ -17,15 +17,26 @@
 struct timeval start_time;
 
 /* Global counters */
-size_t files_processed = 0;
-size_t dirs_processed = 0;
+size_t filesFound = 0;
+size_t dirsFound = 0;
 
 void sigusr1_handler(int sig) {
-  
+  if (sig != SIGUSR1)
+  {
+    fprintf(stderr, "Wrong signal recieved! Expected: SIGUSR1\n");
+  }
+
+  dirsFound++;
+  printf("New directory: %ld/%ld directories/files at this time.\n",dirsFound,filesFound);
 }
 
 void sigusr2_handler(int sig) {
-  
+   if (sig != SIGUSR2)
+  {
+    fprintf(stderr, "Wrong signal recieved! Expected: SIGUSR2\n");
+  }
+
+  filesFound++;
 }
 
 int main(int argc, char** argv) {
@@ -345,8 +356,8 @@ void process_file(const ProgramConfig program_config, const char* fname, FILE* o
   if (program_config.h_flag) {
     if (program_config.h_alg_md5_flag) {
       /* Get MD5 checksum */
-      char* md5_hash = command_to_str("md5 \"%s\" | rev | cut -d ' ' -f1 | rev", fname); // macOS
-      // char* md5_hash = command_to_str("md5sum \"%s\"" | rev | cut -d ' ' -f1 | rev", fname); // linux
+      //char* md5_hash = command_to_str("md5 \"%s\" | rev | cut -d ' ' -f1 | rev", fname); /* macOS*/
+      char* md5_hash = command_to_str("md5sum \"%s\" | rev | cut -d ' ' -f1 | rev", fname);  /* Linux*/
       fprintf(outstream, ",%s", md5_hash);
       free(md5_hash);
     }
