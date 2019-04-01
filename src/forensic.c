@@ -29,6 +29,7 @@ void sigusr1_handler(int sig)
   {
     fprintf(stderr, "Wrong signal recieved! Expected: SIGUSR1\n");
     fflush(stderr);
+    exit(1);
   }
 
   dirsFound++;
@@ -42,6 +43,7 @@ void sigusr2_handler(int sig)
   {
     fprintf(stderr, "Wrong signal recieved! Expected: SIGUSR2\n");
     fflush(stderr);
+    exit(1);
   }
 
   filesFound++;
@@ -441,6 +443,13 @@ void process_file(const ProgramConfig program_config, const char *fname, FILE *o
 
 void process_dir(const ProgramConfig program_config, const char *dname, FILE *outstream)
 {
+
+  static int pipe1[2];
+  if (pipe(pipe1) != 0)
+  {
+    fprintf(stderr, "Error creating a pipe!\n");
+    exit(1);
+  }
 
   /* Create a new process */
   pid_t pid = fork();
