@@ -20,6 +20,9 @@ struct timeval start_time;
 volatile size_t filesFound = 0;
 volatile size_t dirsFound = 0;
 
+#define READ 0
+#define WRITE 1
+
 void sigusr1_handler(int sig)
 {
   if (sig != SIGUSR1)
@@ -488,13 +491,9 @@ void process_dir(const ProgramConfig program_config, const char *dname, FILE *ou
     /* Exit from child process */
     exit(0);
   }
-  else if (pid < 0)
+  else if (pid > 0)
   {
-    /* Error creating process */
-  }
-  else
-  {
-    /* Parent process */
+     /* Parent process */
     wait(NULL);
 
     /* Log this event */
@@ -504,5 +503,9 @@ void process_dir(const ProgramConfig program_config, const char *dname, FILE *ou
       sprintf(act, "PROCESSED DIR %s", dname);
       log_event(act);
     }
+  }
+  else
+  {
+    /* Error creating process */   
   }
 }
