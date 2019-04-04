@@ -121,7 +121,9 @@ char *command_to_str(const char *fmt, const char *arg)
 
   /* Fill char* */
   char *str = malloc(256);
-  fscanf(fp, "%s\n", str);
+  fgets(str, 256, fp);
+  /* Remove trailing newline */
+  str[strlen(str) - 1] = '\0';
 
   /* Close pipe */
   pclose(fp);
@@ -322,14 +324,12 @@ void parse_args(int argc, char **argv, ProgramConfig *program_config)
 
 void process(const ProgramConfig program_config)
 {
-  /* If -v flag enabled, clear the logfile before processing */
+  /* If -v flag enabled, clear the logfile before proceeding */
   if (program_config.v_flag)
     fclose(fopen(getenv("LOGFILENAME"), "w"));
 
   /* Choose output stream (stdout if -o flag disabled) */
   FILE *outstream = program_config.o_flag ? fopen(program_config.o_value, "w") : stdout;
-
-  fprintf(stdout, "Processing... (remove this when project done)\n\n");
 
   /* In case of a directory, strip the trailing '/' character from it if exists */
   if (program_config.arg[strlen(program_config.arg) - 1] == '/')
@@ -349,13 +349,10 @@ void process(const ProgramConfig program_config)
     /* Notify user of saved file through stdout */
     fprintf(stdout, "Data saved on file \"%s\"\n", program_config.o_value);
   }
-
-  fprintf(stdout, "\nDone. (remove this when project done)\n");
 }
 
 void process_file(const ProgramConfig program_config, const char *fname, FILE *outstream)
 {
-
   /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
   if (stat(fname, &file_stat) < 0)
@@ -367,16 +364,16 @@ void process_file(const ProgramConfig program_config, const char *fname, FILE *o
   /* Gather file data */
   const char *file_name = fname;
   off_t file_size = file_stat.st_size;
-  char *file_type = command_to_str("file -b \"%s\"", fname);
-  char *file_access_owner = "";
-  char *file_modified_date = time_to_iso_str(file_stat.st_ctime);
+  char *file_type = command_to_str("file -b \"%s\" | cut -d ',' -f1", fname);
+  char *file_modified_date = time_to_iso_str(file_stat.st_ctime); 
   char *file_accessed_date = time_to_iso_str(file_stat.st_mtime);
 
   /* Print file data */
   fprintf(outstream, "%s,", file_name);
   fprintf(outstream, "%s,", file_type);
   fprintf(outstream, "%lu,", file_size);
-  /* File permissions stuff, needs work (should be put in file_access_owner) */
+
+  /* File permissions stuff */
   if (S_ISDIR(file_stat.st_mode))
     fprintf(outstream, "d");
 
@@ -389,8 +386,7 @@ void process_file(const ProgramConfig program_config, const char *fname, FILE *o
   if (file_stat.st_mode & S_IXUSR)
     fprintf(outstream, "x");
 
-  fprintf(outstream, "%s,", file_access_owner);
-  fprintf(outstream, "%s,", file_modified_date);
+  fprintf(outstream, ",%s,", file_modified_date);
   fprintf(outstream, "%s", file_accessed_date);
 
   /* Are we human or are we hashing? */
@@ -441,7 +437,6 @@ void process_file(const ProgramConfig program_config, const char *fname, FILE *o
 
 void process_dir(const ProgramConfig program_config, const char *dname, FILE *outstream)
 {
-
   /* Create a new process */
   pid_t pid = fork();
 
@@ -472,15 +467,11 @@ void process_dir(const ProgramConfig program_config, const char *dname, FILE *ou
         strcat(name, ent->d_name);
 
         if (ent->d_type == DT_DIR && program_config.r_flag)
-        {
           /* Found a subdirectory, process it if -r flag enabled */
           process_dir(program_config, name, outstream);
-        }
         else
-        {
           /* Found a file, process it */
           process_file(program_config, name, outstream);
-        }
       }
     }
     else
