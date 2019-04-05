@@ -109,8 +109,7 @@ int main(int argc, char **argv)
   /* Begin processing */
   process(program_config);
 
-  while (waitpid(0, NULL, WNOHANG) != -1)
-    ;
+  while (waitpid(0, NULL, WNOHANG) != -1);
 
   /* Everything went well */
   printFinalInfo(program_config);
@@ -543,13 +542,6 @@ void process_dir(const ProgramConfig program_config, const char *dname, FILE *ou
 {
 
   kill(mainPID, SIGUSR1);
-
-  static int pipe1[2];
-  if (pipe(pipe1) != 0)
-  {
-    fprintf(stderr, "Error creating a pipe!\n");
-    exit(1);
-  }
 
   /* Create a new process */
   pid_t pid = fork();
