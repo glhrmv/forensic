@@ -38,6 +38,11 @@ prints the values of the global files/dirs counters to stdout
 */
 void printCounters();
 
+/*
+prints the final results of the execution in a pretty way
+*/
+void printFinalInfo(ProgramConfig conf);
+
 /**
  * @brief Checks if file exists on disk.
  * 

@@ -13,6 +13,9 @@
 #include <dirent.h>
 #include <signal.h>
 
+/* Program Configuration */
+ProgramConfig program_config;
+
 /* Program start timestamp declaration */
 struct timeval start_time;
 
@@ -67,10 +70,9 @@ void int_handler(int sig)
   if (getpid() == mainPID)
   {
     usleep(62500); //wait for the file's info to be printed
-    fprintf(stdout, "\n\n-SIGINT received!\n-");
+    fprintf(stdout, "\n\n-SIGINT received!");
     fflush(stdout);
-    printCounters();
-    printf("\n");
+    printFinalInfo(program_config);
   }
 
   exit(0);
@@ -79,6 +81,7 @@ void int_handler(int sig)
 int main(int argc, char **argv)
 {
   mainPID = getpid();
+  program_config = empty_program_config;
 
   /* Signals set up */
   struct sigaction signals;
@@ -100,9 +103,6 @@ int main(int argc, char **argv)
   /* Program start timestamp assignment */
   gettimeofday(&start_time, 0);
 
-  /* Declare and initialize program config */
-  ProgramConfig program_config = empty_program_config;
-
   /* Modify program_config according to argv */
   parse_args(argc, argv, &program_config);
 
@@ -113,10 +113,61 @@ int main(int argc, char **argv)
     ;
 
   /* Everything went well */
-  printf("\n===================================================\nFinal:\n");
-  printCounters();
-  printf("\n===================================================\n");
+  printFinalInfo(program_config);
   exit(0);
+}
+
+void printFinalInfo(ProgramConfig conf)
+{
+  printf("\n===================================================\n\t\t  Final Info\n\n");
+  printCounters();
+
+  /* Notify user of saved file through stdout */
+  if (conf.o_flag)
+  {
+    fprintf(stdout, "\nData saved on file \"%s\"", conf.o_value);
+  }
+
+  if (conf.v_flag)
+  {
+    fprintf(stdout, "\nLog: TRUE");
+  }
+  else
+  {
+    fprintf(stdout,"\nLog: FALSE");
+  }
+
+  if (conf.h_alg_md5_flag)
+  {
+    fprintf(stdout,"\nmd5: TRUE");
+  }
+  else
+  {
+    fprintf(stdout,"\nmd5: FALSE");    
+  }
+  
+
+  if (conf.h_alg_sha1_flag)
+  {
+    fprintf(stdout,"\tsha1: TRUE");
+  }
+  else
+  {
+    fprintf(stdout,"\tsha1: FALSE");
+  }
+  
+
+   if (conf.h_alg_sha256_flag)
+  {
+    fprintf(stdout,"\tsha256: TRUE");
+  }
+  else
+  {
+    fprintf(stdout,"\tsha256: FALSE");
+  }
+  
+
+  printf("\n===================================================\n");
 }
 
 void printCounters()
@@ -389,9 +440,6 @@ void process(const ProgramConfig program_config)
   if (program_config.o_flag)
   {
     fclose(outstream);
-
-    /* Notify user of saved file through stdout */
-    fprintf(stdout, "Data saved on file \"%s\"\n", program_config.o_value);
   }
 }
 
