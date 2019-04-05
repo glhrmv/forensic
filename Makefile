@@ -2,7 +2,7 @@
 PROG := forensic
 
 # Compiler flags.
-CFLAGS := -Wall -Wextra -g #-Werror
+CFLAGS := -Wall -Wextra -Werror
 
 # Source files.
 SRCS := $(wildcard ./src/*.c)
