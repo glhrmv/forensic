@@ -32,6 +32,12 @@ typedef struct ProgramConfig {
  */
 static const ProgramConfig empty_program_config;
 
+
+/*
+prints the values of the global files/dirs counters to stdout
+*/
+void printCounters();
+
 /**
  * @brief Checks if file exists on disk.
  * 

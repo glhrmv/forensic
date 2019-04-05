@@ -17,8 +17,8 @@
 struct timeval start_time;
 
 /* Global counters */
-volatile size_t filesFound = 0;
-volatile size_t dirsFound = 0;
+size_t filesFound = 0;
+size_t dirsFound = 0;
 
 /* Main Process PID */
 pid_t mainPID = -1;
@@ -36,7 +36,9 @@ void sigusr1_handler(int sig)
   }
 
   dirsFound++;
-  printf("=== New directory: %ld/%ld directories/files at this time.\n", dirsFound, filesFound);
+  printf("\n=== New directory: ");
+  printCounters();
+  printf("  at this time ===\n");
   fflush(stdout);
 }
 
@@ -52,25 +54,48 @@ void sigusr2_handler(int sig)
   filesFound++;
 }
 
-int main(int argc, char **argv)
+void int_handler(int sig)
 {
 
+  if (sig != SIGINT)
+  {
+    fprintf(stderr, "Wrong signal received! Expected: SIGUSR2\n");
+    fflush(stderr);
+    exit(1);
+  }
+
+  if (getpid() == mainPID)
+  {
+    usleep(62500); //wait for the file's info to be printed
+    fprintf(stdout, "\n\n-SIGINT received!\n-");
+    fflush(stdout);
+    printCounters();
+    printf("\n");
+  }
+
+  exit(0);
+}
+
+int main(int argc, char **argv)
+{
   mainPID = getpid();
 
-  /* Set up signal handlers */
+  /* Signals set up */
+  struct sigaction signals;
+  sigemptyset(&signals.sa_mask);
+  signals.sa_flags = 0;
+
   /* USR1 */
-  struct sigaction usr1_action;
-  usr1_action.sa_handler = sigusr1_handler;
-  sigemptyset(&usr1_action.sa_mask);
-  usr1_action.sa_flags = 0;
-  sigaction(SIGUSR1, &usr1_action, NULL);
+  signals.sa_handler = sigusr1_handler;
+  sigaction(SIGUSR1, &signals, NULL);
 
   /* USR2 */
-  struct sigaction usr2_action;
-  usr2_action.sa_handler = sigusr2_handler;
-  sigemptyset(&usr2_action.sa_mask);
-  usr2_action.sa_flags = 0;
-  sigaction(SIGUSR2, &usr2_action, NULL);
+  signals.sa_handler = sigusr2_handler;
+  sigaction(SIGUSR2, &signals, NULL);
+
+  /* SIGINT */
+  signals.sa_handler = int_handler;
+  sigaction(SIGINT, &signals, NULL);
 
   /* Program start timestamp assignment */
   gettimeofday(&start_time, 0);
@@ -84,9 +109,19 @@ int main(int argc, char **argv)
   /* Begin processing */
   process(program_config);
 
+  while (waitpid(0, NULL, WNOHANG) != -1)
+    ;
+
   /* Everything went well */
-  while (waitpid(0, NULL, WNOHANG) != -1);
+  printf("\n===================================================\nFinal:\n");
+  printCounters();
+  printf("\n===================================================\n");
   exit(0);
+}
+
+void printCounters()
+{
+  fprintf(stdout, "Directories processed: %ld   Files processed: %ld", dirsFound, filesFound);
 }
 
 int file_exists(const char *pathname)
@@ -363,7 +398,12 @@ void process(const ProgramConfig program_config)
 void process_file(const ProgramConfig program_config, const char *fname, FILE *outstream)
 {
 
-  kill(mainPID,SIGUSR2);
+  sigset_t prevention;
+  sigemptyset(&prevention);
+  sigaddset(&prevention, SIGINT);
+  sigprocmask(SIG_BLOCK, &prevention, NULL);
+
+  kill(mainPID, SIGUSR2);
 
   /* Fill a file statistics struct from arg passed */
   struct stat file_stat;
@@ -445,12 +485,16 @@ void process_file(const ProgramConfig program_config, const char *fname, FILE *o
   free(file_type);
   free(file_modified_date);
   free(file_accessed_date);
+
+  sigemptyset(&prevention);
+  sigaddset(&prevention, SIGINT);
+  sigprocmask(SIG_UNBLOCK, &prevention, NULL);
 }
 
 void process_dir(const ProgramConfig program_config, const char *dname, FILE *outstream)
 {
 
-  kill(mainPID,SIGUSR1);
+  kill(mainPID, SIGUSR1);
 
   static int pipe1[2];
   if (pipe(pipe1) != 0)
@@ -507,7 +551,7 @@ void process_dir(const ProgramConfig program_config, const char *dname, FILE *ou
   else if (pid > 0)
   {
     /* Parent process */
-    while (waitpid(0, NULL, WNOHANG) != -1);
+    wait(NULL);
 
     /* Log this event */
     if (program_config.v_flag)
