@@ -8,7 +8,7 @@
 /**
  * @brief A structure to represent the program's configuration.
  * 
- * It is set in the parse_args() routine and ideally not changed elsewhere.
+ * It is set in the parse_args() function and ideally not changed elsewhere.
  */
 typedef struct ProgramConfig {
   int debug_flag; // Debug flag
@@ -31,17 +31,6 @@ typedef struct ProgramConfig {
  * See: https://stackoverflow.com/a/6891731/6304441
  */
 static const ProgramConfig empty_program_config;
-
-
-/*
-prints the values of the global files/dirs counters to stdout
-*/
-void printCounters();
-
-/*
-prints the final results of the execution in a pretty way
-*/
-void printFinalInfo(ProgramConfig conf);
 
 /**
  * @brief Checks if file exists on disk.
