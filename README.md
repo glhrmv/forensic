@@ -1,6 +1,6 @@
 # forensic
 
-> University project made for FEUP, MIEIC (SOPE).
+> University project for FEUP, MIEIC (SOPE).
 
 ```
 forensic [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>
