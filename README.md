@@ -2,6 +2,12 @@
 
 > University project for FEUP, MIEIC (SOPE).
 
+## Building
+
+Run `make` in the root directory to build an executable named `forensic`.
+
+## Usage
+
 ```
 forensic [-r] [-h [md5[,sha1[,sha256]]]] [-o <outfile>] [-v] <file|dir>
 ```
@@ -37,8 +43,3 @@ The last 3 fields are optional, depending on the usage of the `-h` flag and its 
 - `-o`: Defines the output stream where to print the processed file details to. If not specified, `stdout` is used. The output stream must be a regular file.
 - `-v`: Generates a logfile with a record of events logged by the program. The logfile name is dependant on the `LOGFILENAME` environment variable sent to the program. If not set, `log.txt` is used as the default file name. The logfile is always cleared before processing begins, i.e., previous execution logs are not kept.
 - `-d`: Debug flag. Prints program configuration after parsing command-line arguments.
-
-## Usage
-
-Run `make` in the root directory to build an executable named `forensic`.
-
